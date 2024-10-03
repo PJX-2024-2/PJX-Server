@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 
 
 @Configuration
-@OpenAPIDefinition(info = @Info(title = "Ittory", description = "Ittory API 명세서", version = "v1"))
+@OpenAPIDefinition(info = @Info(title = "식비달인", description = "식비 달인 API 명세서", version = "v1"))
 @SecurityScheme(
         name = "bearerAuth",
         type = SecuritySchemeType.HTTP,
