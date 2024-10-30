@@ -1,0 +1,23 @@
+spring:
+  security:
+    user:
+      name: user
+      password: 1234
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/pjx_db
+    username: root
+#    password: shfkswoa0@
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+kakao:
+  client_id: cf90c30651b36a2ec22ea27d21520b57
+  client_secret: hrF3lTqZn3atX7PvYbrJMrXUIFbj4bfr
+  redirect_uri: http://localhost:8080/callback
