@@ -1,103 +1,52 @@
 package com.pjx.pjxserver.service;
 
-import com.pjx.pjxserver.domain.Expense;
-import com.pjx.pjxserver.domain.SpendingGoal;
-import com.pjx.pjxserver.domain.User;
-import com.pjx.pjxserver.repository.ExpenseRepository;
-import com.pjx.pjxserver.repository.SpendingGoalRepository;
-import com.pjx.pjxserver.repository.UserRepository;
+import com.pjx.pjxserver.domain.Spending;
+import com.pjx.pjxserver.repository.SpendingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SpendingService {
 
     @Autowired
-    private UserRepository userRepository;
+    private SpendingRepository spendingRepository;
 
-    @Autowired
-    private SpendingGoalRepository spendingGoalRepository;
-
-    @Autowired
-    private ExpenseRepository expenseRepository;
-
-    public SpendingGoal setMonthlyGoal(Long kakaoId, BigDecimal goal) {
-        User user = userRepository.findByKakaoId(kakaoId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
-
-        SpendingGoal spendingGoal = spendingGoalRepository.findByUserAndGoalDate(user, currentMonth)
-                .orElse(SpendingGoal.builder()
-                        .user(user)
-                        .goalDate(currentMonth)
-                        .monthlyGoal(goal)
-                        .currentSpending(BigDecimal.ZERO)
-                        .build());
-
-        spendingGoal.setmonthlyGoal(goal);
-        return spendingGoalRepository.save(spendingGoal);
-    }
-
-    public BigDecimal getCurrentSpending(Long kakaoId, LocalDate month) {
-        User user = userRepository.findByKakaoId(kakaoId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        LocalDate start = month.withDayOfMonth(1);
-        LocalDate end = month.withDayOfMonth(month.lengthOfMonth());
-        List<Expense> expenses = expenseRepository.findByUserAndDateBetween(user, start, end);
-        return expenses.stream()
-                .map(Expense::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    public Expense addExpense(Long kakaoId, LocalDate date, BigDecimal amount) {
-        User user = userRepository.findByKakaoId(kakaoId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Expense expense = Expense.builder()
-                .user(user)
-                .date(date)
+    // 날짜를 포함하도록 메서드 시그니처 수정
+    public Spending createSpending(Long kakaoId, LocalDate date, BigDecimal amount, String description, String note, List<String> images) {
+        Spending spending = Spending.builder()
+                .kakaoId(kakaoId)
+                .date(date) // 특정 날짜 설정
                 .amount(amount)
+                .description(description)
+                .note(note)
+                .images(images)
                 .build();
-
-        SpendingGoal spendingGoal = spendingGoalRepository.findByUserAndGoalDate(user, date.withDayOfMonth(1))
-                .orElseThrow(() -> new RuntimeException("Spending goal not set for this month"));
-
-        spendingGoal.setCurrentSpending(spendingGoal.getCurrentSpending().add(amount));
-        spendingGoalRepository.save(spendingGoal);
-
-        return expenseRepository.save(expense);
+        return spendingRepository.save(spending);
     }
 
-    public BigDecimal getTodaySpending(Long kakaoId) {
-        User user = userRepository.findByKakaoId(kakaoId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public Spending updateSpending(Long spendingId, BigDecimal amount, String description, String note, List<String> images) {
+        Spending spending = spendingRepository.findById(spendingId)
+                .orElseThrow(() -> new RuntimeException("Spending not found"));
 
-        LocalDate today = LocalDate.now();
+        // Update fields only if they are provided
+        if (amount != null) spending.setAmount(amount);
+        if (description != null) spending.setDescription(description);
+        if (note != null) spending.setNote(note);
+        if (images != null) spending.setImages(images);
 
-        // Fetch expenses for today
-        List<Expense> expenses = expenseRepository.findByUserAndDate(user, today);
-
-        // Calculate the total amount spent today
-        return expenses.stream()
-                .map(Expense::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return spendingRepository.save(spending);
     }
 
-    // 특정 날짜의 지출 항목 추가
-    public BigDecimal getSpendingByDate(Long kakaoId, LocalDate date) {
-        User user = userRepository.findByKakaoId(kakaoId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public void deleteSpending(Long spendingId) {
+        spendingRepository.deleteById(spendingId);
+    }
 
-        // 특정 날짜의 지출 항목들을 조회
-        List<Expense> expenses = expenseRepository.findByUserAndDate(user, date);
-
-        // 해당 날짜의 총 지출 금액 계산
-        return expenses.stream()
-                .map(Expense::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    public Optional<Spending> getSpendingDetail(Long spendingId) {
+        return spendingRepository.findById(spendingId);
     }
 }

@@ -1,5 +1,6 @@
 package com.pjx.pjxserver.controller;
 
+
 import com.pjx.pjxserver.domain.User;
 import com.pjx.pjxserver.dto.KakaoTokenResponseDto;
 import com.pjx.pjxserver.dto.KakaoUserInfoResponseDto;
@@ -21,14 +22,13 @@ public class KakaoLoginController {
     private final KakaoService kakaoService;
     private final UserService userService;
 
-
     @Value("${kakao.client_id}")
     private String clientId;
 
     @Value("${kakao.redirect_uri}")
     private String redirectUri;
 
-    @Operation(summary = "Kakao Login Page URL")
+    @Operation(summary = "백엔드를 위한 Kakao Login Page URL")
     @GetMapping("/api/kakao/login")
     public ResponseEntity<String> kakaoLoginPage() {
         String loginUrl = "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=" +
@@ -36,13 +36,14 @@ public class KakaoLoginController {
         return ResponseEntity.ok(loginUrl);
     }
 
-    @Operation(summary = " Access Token 얻기 위한 API")
+    @Operation(summary = " Access Token과 Refresh Token을 얻기 위한 API")
     @GetMapping("/api/kakao/callback")
     public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(@RequestParam String code) {
         return kakaoService.getAccessToken(code)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
     }
+
 
     @Operation(summary = "Access Token으로 카카오 유저 정보 가져오는 API")
     @GetMapping("/api/kakao/userinfo")
