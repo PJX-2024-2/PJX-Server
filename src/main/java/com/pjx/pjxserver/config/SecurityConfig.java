@@ -36,7 +36,8 @@ public class SecurityConfig {
                             "https://pjx-client-4bsx.vercel.app",
                             "http://localhost:8080", 
                             "http://localhost:443",
-                            "http://localhost:80"
+                            "http://localhost:80",
+                            "https://www.savvymeals.store" 
                         ) 
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
