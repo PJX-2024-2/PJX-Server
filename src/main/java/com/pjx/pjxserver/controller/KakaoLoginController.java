@@ -37,12 +37,20 @@ public class KakaoLoginController {
     }
 
     @Operation(summary = " Access Token과 Refresh Token을 얻기 위한 API")
-    @GetMapping("/api/kakao/callback")
-    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(@RequestParam String code) {
+    @PostMapping("/api/kakao/callback")
+    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(@RequestBody KakaoCallbackRequestDto request) {
+        String code = request.getCode();
         return kakaoService.getAccessToken(code)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
     }
+    
+    // @GetMapping("/api/kakao/callback")
+    // public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(@RequestParam String code) {
+    //     return kakaoService.getAccessToken(code)
+    //             .map(ResponseEntity::ok)
+    //             .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
+    // }
 
 
     @Operation(summary = "Access Token으로 카카오 유저 정보 가져오는 API")
