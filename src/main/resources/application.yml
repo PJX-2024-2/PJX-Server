@@ -20,6 +20,7 @@ spring:
 kakao:
   client_id: cf90c30651b36a2ec22ea27d21520b57
   client_secret: hrF3lTqZn3atX7PvYbrJMrXUIFbj4bfr
-  redirect_uri: https://www.savvymeals.store/api/kakao/callback
+  redirect_uri: http://localhost:5173/api/kakao/callback
+  #redirect_uri: https://www.savvymeals.store/api/kakao/callback
   # redirect_uri: http://localhost:8080/callback
   
