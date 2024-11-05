@@ -1,6 +1,6 @@
 package com.pjx.pjxserver.controller;
 
-
+import com.pjx.pjxserver.dto.KakaoCallbackRequestDto;
 import com.pjx.pjxserver.domain.User;
 import com.pjx.pjxserver.dto.KakaoTokenResponseDto;
 import com.pjx.pjxserver.dto.KakaoUserInfoResponseDto;
