@@ -19,10 +19,28 @@ public class SpendingGoalController {
 
     @Autowired
     private SpendingGoalService spendingService;
-    @Operation(summary = "이번달 지출 목표 설정")
+    @Operation(summary = "홈 - 유저가 한달 목표를 설정하는 PUT method api")
     @PutMapping("/goal")
     public ResponseEntity<SpendingGoal> setMonthlyGoal(@RequestParam Long kakaoId, @RequestParam BigDecimal goal) {
         return ResponseEntity.ok(spendingService.setMonthlyGoal(kakaoId, goal));
+    }
+
+    @Operation(summary = "홈1 - 유저가 설정한 한달 목표 지출을 받을 수 있는 GET method api")
+    @GetMapping("/goal")
+    public ResponseEntity<Map<String, Object>> getMonthlyGoal(@RequestParam Long kakaoId) {
+        BigDecimal monthlyGoal = spendingService.getMonthlyGoal(kakaoId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("goal", monthlyGoal);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "홈2 - 유저가 수정한 한달 목표 지출을 보낼 수 있는 POST method api")
+    @PostMapping("/goal")
+    public ResponseEntity<SpendingGoal> updateMonthlyGoal(@RequestParam Long kakaoId, @RequestParam BigDecimal newGoal) {
+        SpendingGoal updatedGoal = spendingService.updateMonthlyGoal(kakaoId, newGoal);
+        return ResponseEntity.ok(updatedGoal);
     }
 
     @Operation(summary = "이번달 총 지출 조회")

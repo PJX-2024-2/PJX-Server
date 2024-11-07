@@ -1,21 +1,21 @@
 package com.pjx.pjxserver.controller;
 
-import com.pjx.pjxserver.domain.Feed;
 import com.pjx.pjxserver.domain.Spending;
 import com.pjx.pjxserver.domain.User;
 import com.pjx.pjxserver.service.SpendingService;
 import com.pjx.pjxserver.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -140,6 +140,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "피드에서 친구의 지출내역에 대한 리액션을 등록하는 api")
     @PostMapping("/spendings/{spendingId}/reactions")
     public ResponseEntity<Map<String, Object>> addReaction(
             @PathVariable Long spendingId,
@@ -151,6 +152,52 @@ public class UserController {
         // 응답 메시지를 Map 형식으로 구성
         Map<String, Object> response = new HashMap<>();
         response.put("message", "리액션이 성공적으로 추가되었습니다");
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "홈4 - 특정 날짜의 지출에 대한 리액션을 추가하는 POST method api입니다")
+    @PostMapping("/submit-reaction")
+    public ResponseEntity<Map<String, Object>> submitReaction(
+            @RequestParam Long kakaoId,
+            @RequestParam LocalDate date,
+            @RequestParam String reactionType) {
+
+        // SpendingService를 호출하여 감정을 리액션으로 저장
+        spendingService.submitReaction(kakaoId, date, reactionType);
+
+        // 응답 메시지를 Map 형식으로 구성
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "오늘의 리액션이 성공적으로 추가되었습니다");
+        response.put("date", date);
+        response.put("reaction", reactionType);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "홈5 - 특정 월의 모든 지출 내역에 대한 감정 리스트 조회하는 POST method api", description = "해당 월의 지출 내역에 대한 리액션 목록을 반환합니다.")
+    @PostMapping("/reactions/by-month")
+    public ResponseEntity<Map<String, Object>> getReactionsByMonth(
+            @RequestParam Long kakaoId,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM") String month) {
+
+        LocalDate startDate = LocalDate.parse(month + "-01");
+        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+
+        List<Spending> spendingList = spendingService.getSpendingListByDateRange(kakaoId, startDate, endDate);
+
+        List<Map<String, Object>> reactionsList = spendingList.stream()
+                .map(spending -> {
+                    Map<String, Object> spendingData = new HashMap<>();
+                    spendingData.put("date", spending.getDate());
+                    spendingData.put("reactions", spending.getReactions());
+                    return spendingData;
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("month", month);
+        response.put("reactionsList", reactionsList);
 
         return ResponseEntity.ok(response);
     }

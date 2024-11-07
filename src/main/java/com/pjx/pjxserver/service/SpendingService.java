@@ -93,5 +93,28 @@ public class SpendingService {
                 })
                 .collect(Collectors.toList());
     }
+    public List<Spending> getSpendingListByDate(Long kakaoId, LocalDate date) {
+        return spendingRepository.findByKakaoIdAndDate(kakaoId, date);
+    }
+
+    @Transactional
+    public void submitReaction(Long kakaoId, LocalDate date, String reactionType) {
+        // 특정 날짜와 kakaoId에 해당하는 모든 Spending을 조회
+        List<Spending> spendings = spendingRepository.findByKakaoIdAndDate(kakaoId, date);
+
+        // 조회된 지출 목록이 비어 있는 경우 예외 발생
+        if (spendings.isEmpty()) {
+            throw new IllegalArgumentException("해당 날짜의 지출 정보를 찾을 수 없습니다.");
+        }
+
+        // 첫 번째 지출 항목에 리액션 추가
+        Spending spending = spendings.get(0);
+        spending.addReaction(kakaoId, reactionType);
+        spendingRepository.save(spending);
+    }
+
+    public List<Spending> getSpendingListByDateRange(Long kakaoId, LocalDate startDate, LocalDate endDate) {
+        return spendingRepository.findAllByKakaoIdAndDateBetween(kakaoId, startDate, endDate);
+    }
 
 }

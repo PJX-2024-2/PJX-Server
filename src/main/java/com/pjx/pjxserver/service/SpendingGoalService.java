@@ -100,4 +100,34 @@ public class SpendingGoalService {
                 .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+    // 이번 달 목표 지출을 조회하는 메서드 추가
+    public BigDecimal getMonthlyGoal(Long kakaoId) {
+        User user = userRepository.findByKakaoId(kakaoId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
+
+        // 현재 달의 SpendingGoal을 찾고 목표 금액을 반환 (없을 경우 0 반환)
+        return spendingGoalRepository.findByUserAndGoalDate(user, currentMonth)
+                .map(SpendingGoal::getMonthlyGoal)
+                .orElse(BigDecimal.ZERO);
+    }
+
+    // 이번 달 목표 지출을 수정하는 메서드 추가
+    public SpendingGoal updateMonthlyGoal(Long kakaoId, BigDecimal newGoal) {
+        User user = userRepository.findByKakaoId(kakaoId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
+
+        // 현재 달의 SpendingGoal을 조회 후 목표 금액 업데이트
+        SpendingGoal spendingGoal = spendingGoalRepository.findByUserAndGoalDate(user, currentMonth)
+                .orElse(SpendingGoal.builder()
+                        .user(user)
+                        .goalDate(currentMonth)
+                        .monthlyGoal(BigDecimal.ZERO)
+                        .currentSpending(BigDecimal.ZERO)
+                        .build());
+
+        spendingGoal.setMonthlyGoal(newGoal);
+        return spendingGoalRepository.save(spendingGoal);
+    }
 }

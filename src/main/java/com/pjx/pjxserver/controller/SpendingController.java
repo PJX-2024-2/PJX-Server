@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/spending/manual")
@@ -103,6 +104,37 @@ public class SpendingController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("data", spending);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // 특정 날짜의 지출 목록 조회
+    @Operation(summary = "홈3 - 해당하는 날을 눌렀을때 날짜를 보내주면 그날에 대한 지출 목록 리스트를 보내주는 POST method api", description = "특정 날짜의 지출 내역을 리스트 형식으로 조회합니다.")
+    @PostMapping("/list")
+    public ResponseEntity<Map<String, Object>> getSpendingListByDate(
+            @RequestParam Long kakaoId,
+            @RequestParam String date) {
+
+        LocalDate spendingDate = LocalDate.parse(date);
+
+        // 지출 서비스에서 해당 날짜의 지출 목록을 가져옴
+        List<Spending> spendingList = spendingService.getSpendingListByDate(kakaoId, spendingDate);
+
+        // 각 지출 항목을 필요한 정보로 매핑하여 반환할 리스트 구성
+        List<Map<String, Object>> spendingData = spendingList.stream()
+                .map(spending -> {
+                    Map<String, Object> spendingInfo = new HashMap<>();
+                    spendingInfo.put("desccription", spending.getDescription()); // 지출 내역 이름
+                    spendingInfo.put("amount", spending.getAmount()); // 비용
+                    spendingInfo.put("images", spending.getImages()); // 사진 리스트
+                    spendingInfo.put("note", spending.getNote()); // 메모
+                    return spendingInfo;
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("date", date);
+        response.put("spendingList", spendingData);
 
         return ResponseEntity.ok(response);
     }
