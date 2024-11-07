@@ -6,22 +6,27 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
-
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class Friend {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private Long kakaoId; // Kakao user ID, should be unique for each Kakao user
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(unique = true, nullable = false)
-    private String nickname; // User nickname, also unique
+    @ManyToOne
+    @JoinColumn(name = "friend_id", nullable = false)
+    private User friend;
+
+    public Friend(User user, User friend) {
+        this.user = user;
+        this.friend = friend;
+    }
 }

@@ -38,6 +38,10 @@ public class Spending {
     @Column(nullable = false)
     private LocalDate date; // 지출 날짜
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user; // 지출을 기록한 사용자
+
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }

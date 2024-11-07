@@ -1,0 +1,144 @@
+package com.pjx.pjxserver.controller;
+
+import com.pjx.pjxserver.domain.Feed;
+import com.pjx.pjxserver.domain.Spending;
+import com.pjx.pjxserver.domain.User;
+import com.pjx.pjxserver.service.SpendingService;
+import com.pjx.pjxserver.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+public class UserController {
+
+    private final UserService userService;
+    private final SpendingService spendingService;
+
+    @Operation(summary = "피드에서 닉네임으로 친구를 검색하는 api입니다", description = "닉네임으로 친구를 검색합니다.")
+    @GetMapping("/feed/search")
+    public ResponseEntity<Map<String, Object>> searchUsers(@RequestParam String nickname) {
+        List<User> users = userService.searchUsersByNickname(nickname);
+        Map<String, Object> response = new HashMap<>();
+
+        if (users.isEmpty()) {
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", "해당 닉네임과 동일한 친구를 찾지 못했습니다."); // "No users found with the given nickname."
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "친구 목록을 성공적으로 조회했습니다."); // "Successfully retrieved friend list."
+        response.put("data", users);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "피드에서 닉네임으로 친구를 검색 후 친구를 추가하는 api 입니다", description = "사용자가 친구를 추가합니다.")
+    @PostMapping("/feed/add-friend")
+    public ResponseEntity<Map<String, Object>> addFriendByKakaoId(
+            @RequestParam Long kakaoId,
+            @RequestParam(required = false) String friendNickname,
+            @RequestParam(required = false) Long friendKakaoId) {
+
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String responseMessage = userService.addFriendByKakaoId(kakaoId, friendNickname, friendKakaoId);
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", responseMessage);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            response.put("status", HttpStatus.BAD_REQUEST.value());
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @Operation(summary = "내 화면인지, 친구 화면인지 구분할 수 있는 kakaoId로 친구를 피드에서 클릭했을때 확인해주는 api", description = "피드가 자신의 피드인지 확인합니다.")
+    @GetMapping("/feed/check")
+    public ResponseEntity<Map<String, Object>> checkFeedOwner(
+            @RequestParam Long userKakaoId,
+            @RequestParam Long targetKakaoId) {
+
+        boolean isOwnFeed = userService.isOwnFeed(userKakaoId, targetKakaoId);
+        Map<String, Object> response = new HashMap<>();
+
+        if (isOwnFeed) {
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", "본인의 피드입니다.");
+        } else {
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", "친구의 피드입니다.");
+        }
+
+        response.put("isOwnFeed", isOwnFeed);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "친구의 카카오 아이디로 팔로우 추가하는 api 입니다")
+    @PostMapping("/{friendKakaoId}/follow")
+    public ResponseEntity<Map<String, String>> followUser(
+            @RequestParam Long userKakaoId,
+            @PathVariable Long friendKakaoId) {
+        Map<String, String> response = new HashMap<>();
+        try {
+            String message = userService.followUser(userKakaoId, friendKakaoId);
+            response.put("message", message);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @Operation(summary = "친구의 카카오 아이디로 팔로우 취소하는 api입니다")
+    @DeleteMapping("/{friendKakaoId}/follow")
+    public ResponseEntity<Map<String, String>> unfollowUser(
+            @RequestParam Long userKakaoId,
+            @PathVariable Long friendKakaoId) {
+        Map<String, String> response = new HashMap<>();
+        try {
+            String message = userService.unfollowUser(userKakaoId, friendKakaoId);
+            response.put("message", message);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @Operation(summary = "팔로우중인지 아닌지 상태를 확인하는 api")
+    @GetMapping("/{friendKakaoId}/is-following")
+    public ResponseEntity<Map<String, Boolean>> isFollowing(
+            @RequestParam Long userKakaoId,
+            @PathVariable Long friendKakaoId) {
+        boolean isFollowing = userService.isFollowing(userKakaoId, friendKakaoId);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("isFollowing", isFollowing);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "피드 - 팔로우한 친구들의 지출 내역을 요약 조회하는 api입니다", description = "팔로우한 친구의 지출 내역 중 description, amount, kakaoId만 조회합니다.")
+    @GetMapping("/feed/friends/expenses")
+    public ResponseEntity<Map<String, Object>> getFriendSpendingSummary(@RequestParam Long kakaoId) {
+        // 팔로우한 친구의 지출 요약 목록을 조회
+        List<Map<String, Object>> spendingSummaryList = spendingService.getFriendSpendingSummary(kakaoId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("data", spendingSummaryList);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+}

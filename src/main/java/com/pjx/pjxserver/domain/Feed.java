@@ -6,22 +6,24 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class Feed {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private Long kakaoId; // Kakao user ID, should be unique for each Kakao user
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;  // 작성자 정보
 
-    @Column(unique = true, nullable = false)
-    private String nickname; // User nickname, also unique
+    private String content;  // 소비 기록 내용
+    private LocalDateTime date;  // 소비 날짜
+    private Integer amount;  // 소비 금액
 }
