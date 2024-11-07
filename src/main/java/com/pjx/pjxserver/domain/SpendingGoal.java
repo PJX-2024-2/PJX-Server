@@ -41,5 +41,8 @@ public class SpendingGoal {
     public void setCurrentSpending(BigDecimal currentSpending) {
         this.currentSpending = currentSpending;
     }
-}
 
+    public void setMonthlyGoal(BigDecimal monthlyGoal) {
+        this.monthlyGoal = monthlyGoal;
+    }
+}
