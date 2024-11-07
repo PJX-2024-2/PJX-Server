@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Getter
@@ -38,6 +39,16 @@ public class Spending {
     @Column(nullable = false)
     private LocalDate date; // 지출 날짜
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user; // 지출을 기록한 사용자
+
+    @ElementCollection
+    @CollectionTable(name = "spending_reactions", joinColumns = @JoinColumn(name = "spending_id"))
+    @MapKeyColumn(name = "kakao_id")
+    @Column(name = "reaction_type")
+    private Map<Long, String> reactions; // 리액션을 저장할 Map, kakaoId 별로 리액션 타입을 저장
+
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
@@ -52,5 +63,15 @@ public class Spending {
 
     public void setImages(List<String> images) {
         this.images = images;
+    }
+
+    // 리액션 추가 메소드
+    public void addReaction(Long kakaoId, String reactionType) {
+        this.reactions.put(kakaoId, reactionType);
+    }
+
+    // 리액션 삭제 메소드 (옵션)
+    public void removeReaction(Long kakaoId) {
+        this.reactions.remove(kakaoId);
     }
 }
