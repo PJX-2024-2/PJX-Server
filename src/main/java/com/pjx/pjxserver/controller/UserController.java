@@ -140,5 +140,20 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/spendings/{spendingId}/reactions")
+    public ResponseEntity<Map<String, Object>> addReaction(
+            @PathVariable Long spendingId,
+            @RequestParam Long kakaoId,
+            @RequestParam String reactionType) {
+
+        spendingService.addReaction(spendingId, kakaoId, reactionType);
+
+        // 응답 메시지를 Map 형식으로 구성
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "리액션이 성공적으로 추가되었습니다");
+
+        return ResponseEntity.ok(response);
+    }
+
 
 }
