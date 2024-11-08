@@ -1,19 +1,21 @@
 package com.pjx.pjxserver.service;
 
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.pjx.pjxserver.domain.Spending;
 import com.pjx.pjxserver.repository.FriendRepository;
 import com.pjx.pjxserver.repository.SpendingRepository;
 import com.pjx.pjxserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,27 +26,61 @@ public class SpendingService {
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    private UserService userService;
     private FriendRepository friendRepository;
+    @Autowired
+    private AmazonS3Client amazonS3Client;
 
+
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucketName;
     // 날짜를 포함하도록 메서드 시그니처 수정
-    public Spending createSpending(Long kakaoId, LocalDate date, BigDecimal amount, String description, String note, List<String> images) {
+
+    public Spending createSpending(Long kakaoId, LocalDate date, BigDecimal amount, String description, String note, List<MultipartFile> images) throws IOException {
+        List<String> imageUrls = images.stream().map(this::uploadImageToS3).collect(Collectors.toList());
+
         Spending spending = Spending.builder()
                 .kakaoId(kakaoId)
-                .date(date) // 특정 날짜 설정
+                .date(date)
                 .amount(amount)
                 .description(description)
                 .note(note)
-                .images(images)
+                .images(imageUrls)
                 .build();
+
         return spendingRepository.save(spending);
+    }
+
+    private String uploadImageToS3(MultipartFile file) {
+        try {
+            String fileName = UUID.randomUUID() + "-" + file.getOriginalFilename();
+            String filePath = "spending/" + fileName;
+
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentType(getContentType(file.getOriginalFilename()));
+            amazonS3Client.putObject(bucketName, filePath, file.getInputStream(), metadata);
+
+            return amazonS3Client.getUrl(bucketName, filePath).toString();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload image to S3", e);
+        }
+    }
+
+    private String getContentType(String fileName) {
+        if (fileName.endsWith(".webp")) {
+            return "image/webp";
+        } else if (fileName.endsWith(".png")) {
+            return "image/png";
+        } else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+            return "image/jpeg";
+        } else {
+            return "application/octet-stream";
+        }
     }
 
     public Spending updateSpending(Long spendingId, BigDecimal amount, String description, String note, List<String> images) {
         Spending spending = spendingRepository.findById(spendingId)
                 .orElseThrow(() -> new RuntimeException("Spending not found"));
 
-        // Update fields only if they are provided
         if (amount != null) spending.setAmount(amount);
         if (description != null) spending.setDescription(description);
         if (note != null) spending.setNote(note);
