@@ -6,7 +6,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -41,26 +43,30 @@ public class SpendingController {
         return ResponseEntity.ok(response);
     }
 
-    // 지출 항목 생성 (특정 날짜 지정 가능)
     @Operation(summary = "직접 - 지출 항목 생성", description = "사용자가 직접 지출 항목을 생성합니다.")
-    @PostMapping("/create")
+    @PostMapping(value = "/create", consumes = "multipart/form-data")
     public ResponseEntity<Map<String, Object>> createSpending(
             @RequestParam Long kakaoId,
-            @RequestParam String date, // 특정 날짜 추가
+            @RequestParam String date,
             @RequestParam BigDecimal amount,
             @RequestParam String description,
             @RequestParam(required = false) String note,
-            @RequestParam(required = false) List<String> images) {
+            @RequestParam(required = false) List<MultipartFile> images) {
 
-        LocalDate spendingDate = LocalDate.parse(date); // 문자열 날짜를 LocalDate로 변환
-        Spending spending = spendingService.createSpending(kakaoId, spendingDate, amount, description, note, images);
+        LocalDate spendingDate = LocalDate.parse(date);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("spendingId", spending.getId());
-        response.put("message", "지출 항목이 성공적으로 저장되었습니다.");
-        response.put("data", spending);
+        try {
+            Spending spending = spendingService.createSpending(kakaoId, spendingDate, amount, description, note, images);
 
-        return ResponseEntity.ok(response);
+            Map<String, Object> response = new HashMap<>();
+            response.put("spendingId", spending.getId());
+            response.put("message", "지출 항목이 성공적으로 저장되었습니다.");
+            response.put("data", spending);
+
+            return ResponseEntity.ok(response);
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body(Map.of("message", "이미지 업로드에 실패했습니다."));
+        }
     }
 
     // 지출 항목 수정
