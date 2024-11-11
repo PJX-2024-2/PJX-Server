@@ -202,5 +202,26 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "마이페이지에서 닉네임을 수정하는 API입니다", description = "사용자의 닉네임을 수정합니다.")
+    @PatchMapping("/{kakaoId}/nickname")
+    public ResponseEntity<Map<String, Object>> updateNickname(
+            @PathVariable Long kakaoId,
+            @RequestParam String newNickname) {
+
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String message = userService.updateNickname(kakaoId, newNickname);
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", message);
+            response.put("newNickname", newNickname);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            response.put("status", HttpStatus.BAD_REQUEST.value());
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+
 
 }

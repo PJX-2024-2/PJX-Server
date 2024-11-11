@@ -122,4 +122,24 @@ public class UserService {
         friendRepository.deleteByUserAndFriend(user, friend);
         return "언팔로우 성공";
     }
+
+    public String updateNickname(Long kakaoId, String newNickname) {
+        User user = userRepository.findByKakaoId(kakaoId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        if (newNickname == null || newNickname.trim().isEmpty()) {
+            throw new IllegalArgumentException("유효한 닉네임을 입력하세요.");
+        }
+
+        boolean nicknameExists = userRepository.existsByNickname(newNickname);
+        if (nicknameExists) {
+            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+        }
+
+        user.setNickname(newNickname);
+        userRepository.save(user);
+
+        return "닉네임이 성공적으로 수정되었습니다.";
+    }
+
 }

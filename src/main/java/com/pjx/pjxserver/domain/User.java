@@ -1,15 +1,13 @@
 package com.pjx.pjxserver.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Set;
 
 @Entity
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,8 +18,8 @@ public class User {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private Long kakaoId; // Kakao user ID, should be unique for each Kakao user
+    private Long kakaoId;
 
     @Column(unique = true, nullable = false)
-    private String nickname; // User nickname, also unique
+    private String nickname;
 }
