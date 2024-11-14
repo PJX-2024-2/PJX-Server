@@ -22,4 +22,6 @@ public class User {
 
     @Column(unique = true, nullable = false)
     private String nickname;
+
+    private String profileImageUrl;
 }

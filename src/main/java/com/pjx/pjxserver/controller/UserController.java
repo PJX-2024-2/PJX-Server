@@ -1,21 +1,29 @@
 package com.pjx.pjxserver.controller;
 
+import com.pjx.pjxserver.dto.UserProfileRequestDto;
+import com.pjx.pjxserver.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+
 import com.pjx.pjxserver.domain.Spending;
 import com.pjx.pjxserver.domain.User;
 import com.pjx.pjxserver.service.SpendingService;
-import com.pjx.pjxserver.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
-import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+
 
 @RestController
 @RequestMapping("/api/users")
@@ -24,6 +32,30 @@ public class UserController {
 
     private final UserService userService;
     private final SpendingService spendingService;
+
+    @GetMapping("/profile/{kakaoId}")
+    public ResponseEntity<String> getProfileImage(@PathVariable Long kakaoId) {
+        String profileImageUrl = userService.getProfileImageUrl(kakaoId);
+        if (profileImageUrl == null) {
+            // 프로필 이미지가 없는 경우 404 Not Found가 아니라 프로필이미지가 없습니다로 대체
+            return ResponseEntity.ok("프로필 이미지가 없습니다.");
+        }
+        return ResponseEntity.ok(profileImageUrl);
+    }
+
+    @PostMapping(value = "/profile/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> uploadProfile(@RequestParam("kakaoId") Long kakaoId,
+                                                @RequestParam("profileImage") MultipartFile profileImage) throws IOException {
+        UserProfileRequestDto requestDto = new UserProfileRequestDto(kakaoId, profileImage);
+        String profileImageUrl = userService.uploadProfileImage(requestDto);
+        return ResponseEntity.ok(profileImageUrl);
+    }
+
+    @DeleteMapping("/profile/delete/{kakaoId}")
+    public ResponseEntity<String> deleteProfile(@PathVariable Long kakaoId) {
+        userService.deleteProfileImage(kakaoId);
+        return ResponseEntity.ok("프로필 삭제 완료!\n");
+    }
 
     @Operation(summary = "피드에서 닉네임으로 친구를 검색하는 api입니다", description = "닉네임으로 친구를 검색합니다.")
     @GetMapping("/feed/search")
@@ -202,6 +234,8 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+
+    // ====================
     @Operation(summary = "마이페이지에서 닉네임을 수정하는 API입니다", description = "사용자의 닉네임을 수정합니다.")
     @PatchMapping("/{kakaoId}/nickname")
     public ResponseEntity<Map<String, Object>> updateNickname(
@@ -221,7 +255,4 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
-
-
-
 }
