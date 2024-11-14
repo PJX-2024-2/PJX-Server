@@ -18,7 +18,7 @@ public class SecurityConfig {
                 .cors(withDefaults()) 
                 .csrf(csrf -> csrf.disable()) 
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/kakao/callback", "/api/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/kakao/callback", "/api/spending/manual/goal", "/api/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated() 
                 );
 
