@@ -6,6 +6,5 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class OnboardingRequestDto {
-    private Long kakaoId; // Kakao user ID
     private String nickname;
 }

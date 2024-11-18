@@ -86,18 +86,27 @@ public class UserService {
     }
 
     @Transactional
-    public User onboardUser(OnboardingRequestDto onboardingRequest) {
+    public User onboardUser(Long kakaoId, OnboardingRequestDto onboardingRequest) {
+        // 닉네임 중복 체크
         if (!isNicknameAvailable(onboardingRequest.getNickname())) {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
 
+        // 기존 사용자 확인
+        Optional<User> existingUser = userRepository.findByKakaoId(kakaoId);
+        if (existingUser.isPresent()) {
+            throw new IllegalArgumentException("이미 닉네임이 존재하는 사용자입니다.");
+        }
+
+        // 새로운 사용자 생성
         User user = User.builder()
-                .kakaoId(onboardingRequest.getKakaoId())
+                .kakaoId(kakaoId)
                 .nickname(onboardingRequest.getNickname())
                 .build();
 
         return userRepository.save(user);
     }
+
 
     // 파일 확장자에 따른 Content-Type 반환 메서드
     private String getContentType(String fileName) {
@@ -211,4 +220,6 @@ public class UserService {
 
         return "닉네임이 성공적으로 수정되었습니다.";
     }
+
+
 }
