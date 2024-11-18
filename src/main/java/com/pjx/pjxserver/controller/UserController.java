@@ -1,8 +1,10 @@
 package com.pjx.pjxserver.controller;
 
+import com.pjx.pjxserver.common.JwtUtil;
 import com.pjx.pjxserver.dto.UserProfileRequestDto;
 import com.pjx.pjxserver.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,32 +32,77 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserController {
 
+    @Autowired
+    private JwtUtil jwtUtil;
+    @Autowired
     private final UserService userService;
+    @Autowired
     private final SpendingService spendingService;
 
-    @GetMapping("/profile/{kakaoId}")
-    public ResponseEntity<String> getProfileImage(@PathVariable Long kakaoId) {
+
+//    @GetMapping("/profile/{kakaoId}")
+//    public ResponseEntity<String> getProfileImage(@PathVariable Long kakaoId) {
+//        String profileImageUrl = userService.getProfileImageUrl(kakaoId);
+//        if (profileImageUrl == null) {
+//            // 프로필 이미지가 없는 경우 404 Not Found가 아니라 프로필이미지가 없습니다로 대체
+//            return ResponseEntity.ok("프로필 이미지가 없습니다.");
+//        }
+//        return ResponseEntity.ok(profileImageUrl);
+//    }
+//
+//    @PostMapping(value = "/profile/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+//    public ResponseEntity<String> uploadProfile(@RequestParam("kakaoId") Long kakaoId,
+//                                                @RequestParam("profileImage") MultipartFile profileImage) throws IOException {
+//        UserProfileRequestDto requestDto = new UserProfileRequestDto(kakaoId, profileImage);
+//        String profileImageUrl = userService.uploadProfileImage(requestDto);
+//        return ResponseEntity.ok(profileImageUrl);
+//    }
+//
+//    @DeleteMapping("/profile/delete/{kakaoId}")
+//    public ResponseEntity<String> deleteProfile(@PathVariable Long kakaoId) {
+//        userService.deleteProfileImage(kakaoId);
+//        return ResponseEntity.ok("프로필 삭제 완료!\n");
+//    }
+// JWT에서 kakaoId를 추출하는 공통 메서드
+private Long extractKakaoIdFromJwt(String authHeader) {
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        throw new IllegalArgumentException("Invalid or missing Authorization header");
+    }
+    String token = authHeader.substring(7); // "Bearer " 이후의 토큰만 추출
+    return Long.valueOf(jwtUtil.extractSubject(token)); // JWT의 subject에서 kakaoId 추출
+}
+
+    @GetMapping("/profile")
+    public ResponseEntity<String> getProfileImage(@RequestHeader("Authorization") String authHeader) {
+        Long kakaoId = extractKakaoIdFromJwt(authHeader);
+
         String profileImageUrl = userService.getProfileImageUrl(kakaoId);
         if (profileImageUrl == null) {
-            // 프로필 이미지가 없는 경우 404 Not Found가 아니라 프로필이미지가 없습니다로 대체
+            // 프로필 이미지가 없는 경우
             return ResponseEntity.ok("프로필 이미지가 없습니다.");
         }
         return ResponseEntity.ok(profileImageUrl);
     }
 
     @PostMapping(value = "/profile/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> uploadProfile(@RequestParam("kakaoId") Long kakaoId,
-                                                @RequestParam("profileImage") MultipartFile profileImage) throws IOException {
+    public ResponseEntity<String> uploadProfile(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam("profileImage") MultipartFile profileImage) throws IOException {
+
+        Long kakaoId = extractKakaoIdFromJwt(authHeader);
         UserProfileRequestDto requestDto = new UserProfileRequestDto(kakaoId, profileImage);
         String profileImageUrl = userService.uploadProfileImage(requestDto);
         return ResponseEntity.ok(profileImageUrl);
     }
-    
-    @DeleteMapping("/profile/delete/{kakaoId}")
-    public ResponseEntity<String> deleteProfile(@PathVariable Long kakaoId) {
+
+    @DeleteMapping("/profile/delete")
+    public ResponseEntity<String> deleteProfile(@RequestHeader("Authorization") String authHeader) {
+        Long kakaoId = extractKakaoIdFromJwt(authHeader);
+
         userService.deleteProfileImage(kakaoId);
         return ResponseEntity.ok("프로필 삭제 완료!\n");
     }
+
     
     // ============================
     @Operation(summary = "피드에서 닉네임으로 친구를 검색하는 api입니다", description = "닉네임으로 친구를 검색합니다.")
