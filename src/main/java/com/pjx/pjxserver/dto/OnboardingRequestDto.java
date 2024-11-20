@@ -6,5 +6,5 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class OnboardingRequestDto {
-    private String nickname;
+    private String userNickname;
 }
