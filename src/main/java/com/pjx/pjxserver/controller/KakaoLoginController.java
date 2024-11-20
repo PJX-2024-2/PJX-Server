@@ -59,23 +59,62 @@ public class KakaoLoginController {
                 .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
     }
 
-    @Operation(summary = "Access Token으로 카카오 유저 정보 가져오기 및 JWT 발급", security = @SecurityRequirement(name = ""))
-    @GetMapping("/api/kakao/userinfo")
-    public Mono<ResponseEntity<Map<String, Object>>> getUserInfo(@RequestParam String accessToken) {
-        return kakaoService.getUserInfo(accessToken)
-                .flatMap(userInfo -> {
-                    String jwtToken = jwtUtil.generateToken(Map.of(), userInfo.getId().toString());
+//    @Operation(summary = "Access Token으로 카카오 유저 정보 가져오기 및 JWT 발급", security = @SecurityRequirement(name = ""))
+//    @GetMapping("/api/kakao/userinfo")
+//    public Mono<ResponseEntity<Map<String, Object>>> getUserInfo(@RequestParam String accessToken) {
+//        return kakaoService.getUserInfo(accessToken)
+//                .flatMap(userInfo -> {
+//                    String jwtToken = jwtUtil.generateToken(Map.of(), userInfo.getId().toString());
+//
+//                    Map<String, Object> response = Map.of(
+//                            "userInfo", userInfo,
+//                            "jwtToken", jwtToken
+//                    );
+//
+//                    return Mono.just(ResponseEntity.ok(response));
+//                })
+//                .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
+//    }
+@Operation(summary = "Access Token으로 카카오 유저 정보 가져오기 및 사용자 저장")
+@PostMapping("/api/kakao/userinfo")
+public Mono<ResponseEntity<Map<String, Object>>> saveOrUpdateUserInfo(@RequestParam String accessToken) {
+    return kakaoService.getUserInfo(accessToken)
+            .flatMap(userInfo -> {
+                // 사용자 정보 저장/업데이트
+                Map<String, Object> result = userService.saveOrUpdateUser(
+                        userInfo.getId(),
+                        userInfo.getProperties().getNickname(), // 카카오 닉네임
+                        userInfo.getProperties().getUserNickname(), // 애플리케이션에서 설정한 닉네임
+                        userInfo.getProperties().getProfileImage() // 프로필 이미지
+                );
 
-                    Map<String, Object> response = Map.of(
-                            "userInfo", userInfo,
-                            "jwtToken", jwtToken
-                    );
+                // 응답 데이터 생성
+                String status = (String) result.get("status");
+                String message = (String) result.get("message");
+                User user = (User) result.get("user");
 
-                    return Mono.just(ResponseEntity.ok(response));
-                })
-                .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
-    }
+                // JWT 생성
+                String jwtToken = jwtUtil.generateToken(Map.of(), user.getKakaoId().toString());
 
+                // 최종 응답에 JWT 포함
+                Map<String, Object> response = Map.of(
+                        "status", status,
+                        "message", message,
+                        "userInfo", user,
+                        "jwtToken", jwtToken
+                );
+
+                return Mono.just(ResponseEntity.ok(response));
+            })
+            .onErrorResume(e -> {
+                // 에러 처리
+                return Mono.just(ResponseEntity.badRequest().body(Map.of(
+                        "status", "error",
+                        "message", "사용자 정보를 처리하는 중 문제가 발생했습니다.",
+                        "error", e.getMessage()
+                )));
+            });
+}
 
 
     @Operation(summary = "닉네임 중복 체크")
@@ -110,44 +149,47 @@ public class KakaoLoginController {
 //            return ResponseEntity.status(401).body(null); // 인증 실패 시 401 반환
 //        }
 //    }
+@Operation(summary = "온보딩 닉네임 설정 -> 회원")
+@PostMapping("/api/onboarding")
+public ResponseEntity<Map<String, Object>> onboardUser(
+        @RequestBody OnboardingRequestDto onboardingRequestDto,
+        @RequestHeader("Authorization") String authHeader) {
 
-    @Operation(summary = "온보딩 닉네임 설정 -> 회원")
-    @PostMapping("/api/onboarding")
-    public ResponseEntity<Map<String, Object>> onboardUser(
-            @RequestBody OnboardingRequestDto onboardingRequestDto,
-            @RequestHeader("Authorization") String authHeader) {
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "status", 400,
-                    "message", "Invalid or missing Authorization header"
-            ));
-        }
-
-        try {
-            String token = authHeader.substring(7);
-            Long kakaoId = Long.valueOf(jwtUtil.extractSubject(token));
-
-            User user = userService.onboardUser(kakaoId, onboardingRequestDto);
-
-            return ResponseEntity.ok(Map.of(
-                    "status", 200,
-                    "message", "Onboarding completed successfully.",
-                    "data", user
-            ));
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(400).body(Map.of(
-                    "status", 400,
-                    "message", e.getMessage() // 예외 메시지 포함
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of(
-                    "status", 401,
-                    "message", "Authentication failed"
-            ));
-        }
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        return ResponseEntity.badRequest().body(Map.of(
+                "status", 400,
+                "message", "권한 문제"
+        ));
     }
+
+    try {
+        String token = authHeader.substring(7);
+        Long kakaoId = Long.valueOf(jwtUtil.extractSubject(token));
+
+        // 사용자 온보딩 처리
+        User user = userService.onboardUser(kakaoId, onboardingRequestDto);
+
+        return ResponseEntity.ok(Map.of(
+                "status", 200,
+                "message", "닉네임 설정 완료",
+                "data", user
+        ));
+
+    } catch (IllegalArgumentException e) {
+        return ResponseEntity.status(400).body(Map.of(
+                "status", 400,
+                "message", e.getMessage()
+        ));
+    } catch (Exception e) {
+        return ResponseEntity.status(500).body(Map.of(
+                "status", 500,
+                "message", "서버 에러"
+        ));
+    }
+}
+
+
+
 
 
 
@@ -158,7 +200,7 @@ public class KakaoLoginController {
             logger.warn("Invalid or missing Authorization header");
             return ResponseEntity.badRequest().body(Map.of(
                     "status", 400,
-                    "message", "Invalid or missing Authorization header"
+                    "message", "유효하지 않는 토큰"
             ));
         }
 
@@ -177,10 +219,12 @@ public class KakaoLoginController {
                     "status", 200,
                     "data", Map.of(
                             "kakaoId", user.getKakaoId(),
-                            "nickname", user.getNickname(),
+                            "userName", user.getNickname(),
+                            "userNickname", user.getUserNickname() != null ? user.getUserNickname() : "",
                             "profileImageUrl", user.getProfileImageUrl()
                     )
             );
+
 
             return ResponseEntity.ok(response);
 
