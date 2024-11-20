@@ -9,10 +9,16 @@ import com.pjx.pjxserver.dto.NicknameCheckResponseDto;
 import com.pjx.pjxserver.dto.OnboardingRequestDto;
 import com.pjx.pjxserver.service.KakaoService;
 import com.pjx.pjxserver.service.UserService;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -22,6 +28,8 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 public class KakaoLoginController {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     private final KakaoService kakaoService;
     private final UserService userService;
@@ -144,22 +152,24 @@ public class KakaoLoginController {
 
 
     @Operation(summary = "JWT를 검증하여 카카오 ID로 사용자 정보 조회")
-    @GetMapping("/api/users/me")
+    @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> getUserInfoFromJwt(@RequestHeader("Authorization") String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("Invalid or missing Authorization header");
             return ResponseEntity.badRequest().body(Map.of(
                     "status", 400,
                     "message", "Invalid or missing Authorization header"
             ));
         }
 
+        String token = authHeader.substring(7); // "Bearer " 이후의 토큰만 추출
         try {
-            // JWT에서 사용자 ID (카카오 ID) 추출
-            String token = authHeader.substring(7); // "Bearer " 이후의 토큰만 추출
-            String kakaoId = jwtUtil.extractSubject(token); // JWT의 subject에서 카카오 ID 추출
+            // JWT 유효성 검증 및 사용자 ID 추출
+            String kakaoIdStr = jwtUtil.extractSubject(token); // JWT의 subject에서 카카오 ID 추출
+            Long kakaoId = Long.valueOf(kakaoIdStr);
 
             // 카카오 ID로 사용자 정보 조회
-            User user = userService.getUserByKakaoId(Long.valueOf(kakaoId))
+            User user = userService.getUserByKakaoId(kakaoId)
                     .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자"));
 
             // 사용자 정보를 응답으로 반환
@@ -174,13 +184,45 @@ public class KakaoLoginController {
 
             return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of(
+        } catch (NumberFormatException e) {
+            logger.error("카카오 ID 변환 오류: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "status", 400,
+                    "message", "카카오 ID 형식이 올바르지 않습니다."
+            ));
+        } catch (ExpiredJwtException e) {
+            logger.error("JWT 만료: ", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                     "status", 401,
-                    "message", "유효하지 않은 JWT"
+                    "message", "JWT가 만료되었습니다."
+            ));
+        } catch (SignatureException e) {
+            logger.error("JWT 서명 오류: ", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "status", 401,
+                    "message", "JWT 서명이 유효하지 않습니다."
+            ));
+        } catch (MalformedJwtException e) {
+            logger.error("JWT 형식 오류: ", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "status", 401,
+                    "message", "JWT 형식이 올바르지 않습니다."
+            ));
+        } catch (RuntimeException e) {
+            logger.error("사용자 조회 오류: ", e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                    "status", 404,
+                    "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            logger.error("예상치 못한 오류: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", 500,
+                    "message", "서버 오류가 발생했습니다."
             ));
         }
     }
+
 
 
 }
