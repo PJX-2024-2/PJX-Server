@@ -20,5 +20,8 @@ public class KakaoUserInfoResponseDto {
 
         @JsonProperty("profile_image")
         private String profileImage;
+
+        @JsonProperty("user_nickname")
+        private String userNickname;
     }
 }
