@@ -16,6 +16,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "spending")
 public class Spending {
 
     @Id
