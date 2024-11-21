@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .allowedOrigins(
                             "http://localhost:5173", 
                             "https://pjx-client-4bsx.vercel.app",
+                            "https://pjx-client.vercel.app",
                             "http://localhost:8080", 
                             "http://localhost:443",
                             "http://localhost:80",
