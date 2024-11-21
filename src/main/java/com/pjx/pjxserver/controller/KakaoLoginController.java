@@ -49,23 +49,23 @@ public class KakaoLoginController {
         return ResponseEntity.ok(loginUrl);
     }
 
-    // @Operation(summary = " Access Token과 Refresh Token을 얻기 위한 API", security = @SecurityRequirement(name = ""))
-    // @PostMapping("/api/kakao/callback")
-    // public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(@RequestBody KakaoCallbackRequestDto request) {
-    //     String code = request.getCode();
+    @Operation(summary = " Access Token과 Refresh Token을 얻기 위한 API", security = @SecurityRequirement(name = ""))
+    @PostMapping("/api/kakao/callback")
+    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(@RequestBody KakaoCallbackRequestDto request) {
+        String code = request.getCode();
 
-    //     return kakaoService.getAccessToken(code)
-    //             .map(ResponseEntity::ok)
-    //             .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
-    // }
-
-    @Operation(summary = "Access Token과 Refresh Token을 얻기 위한 API", security = @SecurityRequirement(name = ""))
-    @GetMapping("/api/kakao/callback")
-    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(@RequestParam String code) {
         return kakaoService.getAccessToken(code)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
     }
+
+    // @Operation(summary = "Access Token과 Refresh Token을 얻기 위한 API", security = @SecurityRequirement(name = ""))
+    // @GetMapping("/api/kakao/callback")
+    // public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(@RequestParam String code) {
+    //     return kakaoService.getAccessToken(code)
+    //             .map(ResponseEntity::ok)
+    //             .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
+    // }
 
 // @Operation(summary = "Access Token으로 카카오 유저 정보 가져오기 및 사용자 저장")
 // @PostMapping("/api/kakao/userinfo")
