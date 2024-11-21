@@ -49,34 +49,66 @@ public class KakaoLoginController {
         return ResponseEntity.ok(loginUrl);
     }
 
-    @Operation(summary = " Access Token과 Refresh Token을 얻기 위한 API", security = @SecurityRequirement(name = ""))
-    @PostMapping("/api/kakao/callback")
-    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(@RequestBody KakaoCallbackRequestDto request) {
-        String code = request.getCode();
+    // @Operation(summary = " Access Token과 Refresh Token을 얻기 위한 API", security = @SecurityRequirement(name = ""))
+    // @PostMapping("/api/kakao/callback")
+    // public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(@RequestBody KakaoCallbackRequestDto request) {
+    //     String code = request.getCode();
 
+    //     return kakaoService.getAccessToken(code)
+    //             .map(ResponseEntity::ok)
+    //             .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
+    // }
+
+    @Operation(summary = "Access Token과 Refresh Token을 얻기 위한 API", security = @SecurityRequirement(name = ""))
+    @GetMapping("/api/kakao/callback")
+    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(@RequestParam String code) {
         return kakaoService.getAccessToken(code)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
     }
 
-//    @Operation(summary = "Access Token으로 카카오 유저 정보 가져오기 및 JWT 발급", security = @SecurityRequirement(name = ""))
-//    @GetMapping("/api/kakao/userinfo")
-//    public Mono<ResponseEntity<Map<String, Object>>> getUserInfo(@RequestParam String accessToken) {
-//        return kakaoService.getUserInfo(accessToken)
-//                .flatMap(userInfo -> {
-//                    String jwtToken = jwtUtil.generateToken(Map.of(), userInfo.getId().toString());
-//
-//                    Map<String, Object> response = Map.of(
-//                            "userInfo", userInfo,
-//                            "jwtToken", jwtToken
-//                    );
-//
-//                    return Mono.just(ResponseEntity.ok(response));
-//                })
-//                .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
-//    }
-@Operation(summary = "Access Token으로 카카오 유저 정보 가져오기 및 사용자 저장")
-@PostMapping("/api/kakao/userinfo")
+// @Operation(summary = "Access Token으로 카카오 유저 정보 가져오기 및 사용자 저장")
+// @PostMapping("/api/kakao/userinfo")
+// public Mono<ResponseEntity<Map<String, Object>>> saveOrUpdateUserInfo(@RequestParam String accessToken) {
+//     return kakaoService.getUserInfo(accessToken)
+//             .flatMap(userInfo -> {
+//                 // 사용자 정보 저장/업데이트
+//                 Map<String, Object> result = userService.saveOrUpdateUser(
+//                         userInfo.getId(),
+//                         userInfo.getProperties().getNickname(), // 카카오 닉네임
+//                         userInfo.getProperties().getUserNickname(), // 애플리케이션에서 설정한 닉네임
+//                         userInfo.getProperties().getProfileImage() // 프로필 이미지
+//                 );
+
+//                 // 응답 데이터 생성
+//                 String status = (String) result.get("status");
+//                 String message = (String) result.get("message");
+//                 User user = (User) result.get("user");
+
+//                 // JWT 생성
+//                 String jwtToken = jwtUtil.generateToken(Map.of(), user.getKakaoId().toString());
+
+//                 // 최종 응답에 JWT 포함
+//                 Map<String, Object> response = Map.of(
+//                         "status", status,
+//                         "message", message,
+//                         "userInfo", user,
+//                         "jwtToken", jwtToken
+//                 );
+
+//                 return Mono.just(ResponseEntity.ok(response));
+//             })
+//             .onErrorResume(e -> {
+//                 // 에러 처리
+//                 return Mono.just(ResponseEntity.badRequest().body(Map.of(
+//                         "status", "error",
+//                         "message", "사용자 정보를 처리하는 중 문제가 발생했습니다.",
+//                         "error", e.getMessage()
+//                 )));
+//             });
+// }
+    @Operation(summary = "Access Token으로 카카오 유저 정보 가져오기 및 사용자 저장")
+@GetMapping("/api/kakao/userinfo")
 public Mono<ResponseEntity<Map<String, Object>>> saveOrUpdateUserInfo(@RequestParam String accessToken) {
     return kakaoService.getUserInfo(accessToken)
             .flatMap(userInfo -> {
@@ -115,6 +147,7 @@ public Mono<ResponseEntity<Map<String, Object>>> saveOrUpdateUserInfo(@RequestPa
                 )));
             });
 }
+
 
 
     @Operation(summary = "닉네임 중복 체크")
