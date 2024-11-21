@@ -26,7 +26,7 @@ public class SecurityConfig {
                 .cors(withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/kakao/userinfo", "/api/kakao/callback", "/api/kakao/login", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/kakao/userinfo", "/auth/kakao", "/api/kakao/callback", "/api/kakao/login", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated() // 나머지는 인증 필요
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
