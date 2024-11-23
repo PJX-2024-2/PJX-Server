@@ -243,4 +243,51 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
+
+    @Operation(summary = "홈4 - 특정 날짜의 지출에 대한 리액션을 추가하는 POST method api입니다")
+    @PostMapping("/submit-reaction")
+    public ResponseEntity<Map<String, Object>> submitReaction(
+            @RequestParam Long kakaoId,
+            @RequestParam LocalDate date,
+            @RequestParam String reactionType) {
+
+        // SpendingService를 호출하여 감정을 리액션으로 저장
+        spendingService.submitReaction(kakaoId, date, reactionType);
+
+        // 응답 메시지를 Map 형식으로 구성
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "오늘의 리액션이 성공적으로 추가되었습니다");
+        response.put("date", date);
+        response.put("reaction", reactionType);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "홈5 - 특정 월의 모든 지출 내역에 대한 감정 리스트 조회하는 POST method api", description = "해당 월의 지출 내역에 대한 리액션 목록을 반환합니다.")
+    @PostMapping("/reactions/by-month")
+    public ResponseEntity<Map<String, Object>> getReactionsByMonth(
+            @RequestParam Long kakaoId,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM") String month) {
+
+        LocalDate startDate = LocalDate.parse(month + "-01");
+        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+
+        List<Spending> spendingList = spendingService.getSpendingListByDateRange(kakaoId, startDate, endDate);
+
+        List<Map<String, Object>> reactionsList = spendingList.stream()
+                .map(spending -> {
+                    Map<String, Object> spendingData = new HashMap<>();
+                    spendingData.put("date", spending.getDate());
+                    spendingData.put("reactions", spending.getReactions());
+                    return spendingData;
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("month", month);
+        response.put("reactionsList", reactionsList);
+
+        return ResponseEntity.ok(response);
+    }
+
 }
