@@ -70,4 +70,4 @@ cloud:
     stack:
       auto: false
     s3:
-      bucket: pjx-server-s3 이게 배포인데 두 개로 나눠서 로컬에서도 돌아가고 배포일 때도 돌아가게 하고 싶어
+      bucket: pjx-server-s3 
