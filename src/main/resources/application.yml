@@ -5,9 +5,9 @@ spring:
       password: 1234
 
   datasource:
-    url: jdbc:mysql://pjx-database.chmiq48cssna.ap-northeast-2.rds.amazonaws.com:3306/pjx_db
-    username: root
-    password: pjx2024!
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -18,8 +18,8 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
 kakao:
-  client_id: cf90c30651b36a2ec22ea27d21520b57
-  client_secret: hrF3lTqZn3atX7PvYbrJMrXUIFbj4bfr
+  client_id: ${KAKAO_ID}
+  client_secret: ${KAKAO_SECRET}
   redirect_uri:
     local: http://localhost:5173/auth/kakao
     prod: https://pjx-client.vercel.app/auth/kakao
@@ -27,8 +27,8 @@ kakao:
 cloud:
   aws:
     credentials:
-      access-key: AKIAYQNJSJJT6Z42UR2O
-      secret-key: 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
+      access-key: ${ACCESS_KEY}
+      secret-key: ${SECRET_KEY}
     region:
       static: ap-northeast-2
     stack:
