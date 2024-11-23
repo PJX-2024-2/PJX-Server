@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +35,7 @@ import java.util.Map;
 @Tag(name = "카카오", description = "카카오 로그인 API")
 public class KakaoLoginController {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    private static final Logger logger = LoggerFactory.getLogger(KakaoLoginController.class);
 
     private final KakaoService kakaoService;
     private final UserService userService;
@@ -43,7 +44,7 @@ public class KakaoLoginController {
     @Value("${kakao.client_id}")
     private String clientId;
 
-    @Value("${kakao.redirect_uri}")
+    @Value("${kakao.redirect_uri.local}")
     private String redirectUri;
 
     @Operation(
@@ -104,10 +105,16 @@ public class KakaoLoginController {
             )
     })
     @GetMapping("/api/kakao/callback")
-    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(@RequestParam String code) {
-        return kakaoService.getAccessToken(code)
+    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
+            @RequestParam String code,
+            @RequestHeader(value = HttpHeaders.ORIGIN, required = false) String origin) {
+
+        return kakaoService.getAccessToken(code, origin)
                 .map(ResponseEntity::ok)
-                .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
+                .onErrorResume(e -> {
+                    logger.error("Failed to fetch Kakao access token: {}", e.getMessage());
+                    return Mono.just(ResponseEntity.badRequest().build());
+                });
     }
 
     @Operation(
@@ -460,4 +467,7 @@ public ResponseEntity<Map<String, Object>> onboardUser(
             ));
         }
     }
+
+
+
 }
