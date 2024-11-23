@@ -234,26 +234,6 @@ public class UserService {
     }
 
     // ===========
-//    @Transactional
-//    public User saveOrUpdateUser(Long kakaoId, String nickname, String profileImageUrl) {
-//        // 기존 사용자 확인
-//        Optional<User> existingUser = userRepository.findByKakaoId(kakaoId);
-//        if (existingUser.isPresent()) {
-//            // 기존 사용자가 있다면 닉네임과 프로필 이미지를 업데이트
-//            User user = existingUser.get();
-//            user.setNickname(nickname); // 닉네임 업데이트 (필요한 경우)
-//            user.setProfileImageUrl(profileImageUrl); // 프로필 이미지 업데이트
-//            return userRepository.save(user);
-//        } else {
-//            // 새 사용자 생성
-//            User newUser = User.builder()
-//                    .kakaoId(kakaoId)
-//                    .nickname(nickname)
-//                    .profileImageUrl(profileImageUrl)
-//                    .build();
-//            return userRepository.save(newUser);
-//        }
-//    }
 
     @Transactional
     public Map<String, Object> saveOrUpdateUser(Long kakaoId, String nickname, String userNickname, String profileImageUrl) {
@@ -289,4 +269,57 @@ public class UserService {
         }
     }
 
+
+    //
+//    public boolean isUserNicknameAvailable(String userNickname) {
+//        return !userRepository.existsByUserNickname(userNickname); // 중복 여부 반환
+//    }
+    public boolean isUserNicknameAvailable(String userNickname) {
+        // 기본 닉네임인 경우 항상 사용 불가능하도록 처리
+        if ("".equals(userNickname)) {
+            return false; // 빈 닉네임은 유효하지 않음
+        }
+        return !userRepository.existsByUserNickname(userNickname); // 중복 여부 반환
+    }
+
+
+
+    //
+    @Transactional
+    public String followUserByUserNickname(Long userKakaoId, String friendUserNickname) {
+        User user = userRepository.findByKakaoId(userKakaoId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        User friend = userRepository.findByUserNickname(friendUserNickname)
+                .orElseThrow(() -> new IllegalArgumentException("해당 UserNickname의 친구를 찾을 수 없습니다."));
+
+        if (friendRepository.existsByUserAndFriend(user, friend)) {
+            throw new IllegalArgumentException("이미 팔로우 중입니다.");
+        }
+
+        friendRepository.save(new Friend(user, friend));
+        return "팔로우 성공";
+    }
+
+    @Transactional
+    public String unfollowUserByUserNickname(Long userKakaoId, String friendUserNickname) {
+        User user = userRepository.findByKakaoId(userKakaoId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        User friend = userRepository.findByUserNickname(friendUserNickname)
+                .orElseThrow(() -> new IllegalArgumentException("해당 UserNickname의 친구를 찾을 수 없습니다."));
+
+        friendRepository.deleteByUserAndFriend(user, friend);
+        return "언팔로우 성공";
+    }
+
+    public boolean isFollowingByUserNickname(Long userKakaoId, String friendUserNickname) {
+        User user = userRepository.findByKakaoId(userKakaoId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        User friend = userRepository.findByUserNickname(friendUserNickname)
+                .orElseThrow(() -> new IllegalArgumentException("해당 UserNickname의 친구를 찾을 수 없습니다."));
+
+        return friendRepository.existsByUserAndFriend(user, friend);
+    }
 }
