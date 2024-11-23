@@ -1,10 +1,12 @@
 package com.pjx.pjxserver.service;
 
 import com.pjx.pjxserver.domain.Expense;
+import com.pjx.pjxserver.domain.Spending;
 import com.pjx.pjxserver.domain.SpendingGoal;
 import com.pjx.pjxserver.domain.User;
 import com.pjx.pjxserver.repository.ExpenseRepository;
 import com.pjx.pjxserver.repository.SpendingGoalRepository;
+import com.pjx.pjxserver.repository.SpendingRepository;
 import com.pjx.pjxserver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,10 +23,13 @@ public class SpendingGoalService {
 
     @Autowired
     private SpendingGoalRepository spendingGoalRepository;
+    @Autowired
+    private SpendingRepository spendingRepository;
 
     @Autowired
     private ExpenseRepository expenseRepository;
 
+    // 한 달 목표 설정
     public SpendingGoal setMonthlyGoal(Long kakaoId, BigDecimal goal) {
         User user = userRepository.findByKakaoId(kakaoId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -38,19 +43,26 @@ public class SpendingGoalService {
                         .currentSpending(BigDecimal.ZERO)
                         .build());
 
-        spendingGoal.setmonthlyGoal(goal);
+        spendingGoal.setMonthlyGoal(goal);
         return spendingGoalRepository.save(spendingGoal);
     }
 
+    // 이번 달 총 지출 조회 (Spending + SpendingGoal 데이터 포함)
     public BigDecimal getCurrentSpending(Long kakaoId, LocalDate month) {
         User user = userRepository.findByKakaoId(kakaoId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Spending 테이블에서 해당 월의 지출 총합 계산
         LocalDate start = month.withDayOfMonth(1);
         LocalDate end = month.withDayOfMonth(month.lengthOfMonth());
-        List<Expense> expenses = expenseRepository.findByUserAndDateBetween(user, start, end);
-        return expenses.stream()
-                .map(Expense::getAmount)
+        BigDecimal spendingSum = spendingRepository.findAllByKakaoIdAndDateBetween(kakaoId, start, end).stream()
+                .map(Spending::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // SpendingGoal의 currentSpending 값과 합산
+        return spendingGoalRepository.findByUserAndGoalDate(user, month.withDayOfMonth(1))
+                .map(goal -> goal.getCurrentSpending().add(spendingSum))
+                .orElse(spendingSum); // SpendingGoal이 없는 경우 Spending 데이터만 반환
     }
 
     public Expense addExpense(Long kakaoId, LocalDate date, BigDecimal amount) {
@@ -72,34 +84,22 @@ public class SpendingGoalService {
         return expenseRepository.save(expense);
     }
 
+    // 오늘의 지출 조회 (Spending 데이터 기반)
     public BigDecimal getTodaySpending(Long kakaoId) {
-        User user = userRepository.findByKakaoId(kakaoId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
         LocalDate today = LocalDate.now();
 
-        // Fetch expenses for today
-        List<Expense> expenses = expenseRepository.findByUserAndDate(user, today);
-
-        // Calculate the total amount spent today
-        return expenses.stream()
-                .map(Expense::getAmount)
+        return spendingRepository.findByKakaoIdAndDate(kakaoId, today).stream()
+                .map(Spending::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    // 특정 날짜의 지출 항목 추가
+    // 특정 날짜의 지출 조회 (Spending 데이터 기반)
     public BigDecimal getSpendingByDate(Long kakaoId, LocalDate date) {
-        User user = userRepository.findByKakaoId(kakaoId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // 특정 날짜의 지출 항목들을 조회
-        List<Expense> expenses = expenseRepository.findByUserAndDate(user, date);
-
-        // 해당 날짜의 총 지출 금액 계산
-        return expenses.stream()
-                .map(Expense::getAmount)
+        return spendingRepository.findByKakaoIdAndDate(kakaoId, date).stream()
+                .map(Spending::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+
     // 이번 달 목표 지출을 조회하는 메서드 추가
     public BigDecimal getMonthlyGoal(Long kakaoId) {
         User user = userRepository.findByKakaoId(kakaoId)
