@@ -3,6 +3,11 @@ package com.pjx.pjxserver.controller;
 import com.pjx.pjxserver.common.JwtUtil;
 import com.pjx.pjxserver.dto.UserProfileRequestDto;
 import com.pjx.pjxserver.service.UserService;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -29,6 +34,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@Tag(name = "사용자", description = "사용자 관련 API")
 public class UserController {
 
     @Autowired
@@ -47,6 +53,17 @@ public class UserController {
         return Long.valueOf(jwtUtil.extractSubject(token)); // JWT의 subject에서 kakaoId 추출
     }
 
+
+    @Operation(
+            summary = "프로필 이미지 조회",
+            description = "사용자의 프로필 이미지를 조회합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "프로필 이미지 URL 반환",
+                            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string"))),
+                    @ApiResponse(responseCode = "400", description = "유효하지 않은 요청",
+                            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{}")))
+            }
+    )
     @GetMapping("/profile")
     public ResponseEntity<String> getProfileImage(@RequestHeader("Authorization") String authHeader) {
         Long kakaoId = extractKakaoIdFromJwt(authHeader);
@@ -59,6 +76,16 @@ public class UserController {
         return ResponseEntity.ok(profileImageUrl);
     }
 
+    @Operation(
+            summary = "프로필 이미지 업로드",
+            description = "사용자의 프로필 이미지를 업로드합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "업로드 성공",
+                            content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
+                    @ApiResponse(responseCode = "400", description = "잘못된 요청",
+                            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{}")))
+            }
+    )
     @PostMapping(value = "/profile/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> uploadProfile(
             @RequestHeader("Authorization") String authHeader,
@@ -70,6 +97,16 @@ public class UserController {
         return ResponseEntity.ok(profileImageUrl);
     }
 
+    @Operation(
+            summary = "프로필 이미지 삭제",
+            description = "사용자의 프로필 이미지를 삭제합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "삭제 성공",
+                            content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
+                    @ApiResponse(responseCode = "400", description = "잘못된 요청",
+                            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{}")))
+            }
+    )
     @DeleteMapping("/profile/delete")
     public ResponseEntity<String> deleteProfile(@RequestHeader("Authorization") String authHeader) {
         Long kakaoId = extractKakaoIdFromJwt(authHeader);
@@ -78,79 +115,31 @@ public class UserController {
         return ResponseEntity.ok("프로필 삭제 완료!\n");
     }
 
-    @Operation(summary = "피드에서 닉네임으로 친구를 검색하는 api입니다", description = "닉네임으로 친구를 검색합니다.")
-    @GetMapping("/feed/search")
-    public ResponseEntity<Map<String, Object>> searchUsers(@RequestParam String nickname) {
-        List<User> users = userService.searchUsersByNickname(nickname);
-        Map<String, Object> response = new HashMap<>();
 
-        if (users.isEmpty()) {
-            response.put("status", HttpStatus.NOT_FOUND.value());
-            response.put("message", "해당 닉네임과 동일한 친구를 찾지 못했습니다."); // "No users found with the given nickname."
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-        }
-
-        response.put("status", HttpStatus.OK.value());
-        response.put("message", "친구 목록을 성공적으로 조회했습니다."); // "Successfully retrieved friend list."
-        response.put("data", users);
-
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "피드에서 닉네임으로 친구를 검색 후 친구를 추가하는 api 입니다", description = "사용자가 친구를 추가합니다.")
-    @PostMapping("/feed/add-friend")
-    public ResponseEntity<Map<String, Object>> addFriendByKakaoId(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestParam(required = false) String friendNickname,
-            @RequestParam(required = false) Long friendKakaoId) {
-
-        Long kakaoId = extractKakaoIdFromJwt(authHeader);
-
-        Map<String, Object> response = new HashMap<>();
-        try {
-            String responseMessage = userService.addFriendByKakaoId(kakaoId, friendNickname, friendKakaoId);
-            response.put("status", HttpStatus.OK.value());
-            response.put("message", responseMessage);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            response.put("status", HttpStatus.BAD_REQUEST.value());
-            response.put("message", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
-    }
-
-    @Operation(summary = "내 화면인지, 친구 화면인지 구분할 수 있는 kakaoId로 친구를 피드에서 클릭했을때 확인해주는 api", description = "피드가 자신의 피드인지 확인합니다.")
-    @GetMapping("/feed/check")
-    public ResponseEntity<Map<String, Object>> checkFeedOwner(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestParam Long targetKakaoId) {
-
-        Long userKakaoId = extractKakaoIdFromJwt(authHeader);
-        boolean isOwnFeed = userService.isOwnFeed(userKakaoId, targetKakaoId);
-
-        Map<String, Object> response = new HashMap<>();
-        if (isOwnFeed) {
-            response.put("status", HttpStatus.OK.value());
-            response.put("message", "본인의 피드입니다.");
-        } else {
-            response.put("status", HttpStatus.OK.value());
-            response.put("message", "친구의 피드입니다.");
-        }
-
-        response.put("isOwnFeed", isOwnFeed);
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "친구의 카카오 아이디로 팔로우 추가하는 api 입니다")
-    @PostMapping("/{friendKakaoId}/follow")
+    @Operation(
+            summary = "친구 팔로우 추가",
+            description = "친구 닉네임을 통해 팔로우를 추가합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "팔로우 성공",
+                            content = @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(value = """
+                            {
+                                "message": "팔로우 성공"
+                            }
+                            """))),
+                    @ApiResponse(responseCode = "400", description = "잘못된 요청",
+                            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{}")))
+            }
+    )
+    @PostMapping("/{friendUserNickname}/follow")
     public ResponseEntity<Map<String, String>> followUser(
             @RequestHeader("Authorization") String authHeader,
-            @PathVariable Long friendKakaoId) {
+            @PathVariable String friendUserNickname) {
 
         Long userKakaoId = extractKakaoIdFromJwt(authHeader);
         Map<String, String> response = new HashMap<>();
         try {
-            String message = userService.followUser(userKakaoId, friendKakaoId);
+            String message = userService.followUserByUserNickname(userKakaoId, friendUserNickname);
             response.put("message", message);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -159,16 +148,31 @@ public class UserController {
         }
     }
 
-    @Operation(summary = "친구의 카카오 아이디로 팔로우 취소하는 api입니다")
-    @DeleteMapping("/{friendKakaoId}/follow")
+
+    @Operation(
+            summary = "친구 팔로우 취소",
+            description = "친구 닉네임을 통해 팔로우를 취소합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "팔로우 취소 성공",
+                            content = @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(value = """
+                            {
+                                "message": "팔로우 취소 성공"
+                            }
+                            """))),
+                    @ApiResponse(responseCode = "400", description = "잘못된 요청",
+                            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{}")))
+            }
+    )
+    @DeleteMapping("/{friendUserNickname}/follow")
     public ResponseEntity<Map<String, String>> unfollowUser(
             @RequestHeader("Authorization") String authHeader,
-            @PathVariable Long friendKakaoId) {
+            @PathVariable String friendUserNickname) {
 
         Long userKakaoId = extractKakaoIdFromJwt(authHeader);
         Map<String, String> response = new HashMap<>();
         try {
-            String message = userService.unfollowUser(userKakaoId, friendKakaoId);
+            String message = userService.unfollowUserByUserNickname(userKakaoId, friendUserNickname);
             response.put("message", message);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -177,21 +181,49 @@ public class UserController {
         }
     }
 
-    @Operation(summary = "팔로우중인지 아닌지 상태를 확인하는 api")
-    @GetMapping("/{friendKakaoId}/is-following")
+    @Operation(
+            summary = "팔로우 여부 확인",
+            description = "특정 사용자를 팔로우하고 있는지 여부를 확인합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "팔로우 여부 확인 성공",
+                            content = @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(value = """
+                            {
+                                "isFollowing": true
+                            }
+                            """)))
+            }
+    )
+    @GetMapping("/{friendUserNickname}/is-following")
     public ResponseEntity<Map<String, Boolean>> isFollowing(
             @RequestHeader("Authorization") String authHeader,
-            @PathVariable Long friendKakaoId) {
+            @PathVariable String friendUserNickname) {
 
         Long userKakaoId = extractKakaoIdFromJwt(authHeader);
-        boolean isFollowing = userService.isFollowing(userKakaoId, friendKakaoId);
+        boolean isFollowing = userService.isFollowingByUserNickname(userKakaoId, friendUserNickname);
 
         Map<String, Boolean> response = new HashMap<>();
         response.put("isFollowing", isFollowing);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "마이페이지에서 닉네임을 수정하는 API입니다", description = "사용자의 닉네임을 수정합니다.")
+    @Operation(
+            summary = "마이페이지에서 닉네임 수정",
+            description = "사용자의 닉네임을 수정합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "닉네임 수정 성공",
+                            content = @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(value = """
+                            {
+                                "status": 200,
+                                "message": "닉네임 수정 완료",
+                                "newNickname": "새로운닉네임"
+                            }
+                            """))),
+                    @ApiResponse(responseCode = "400", description = "잘못된 요청",
+                            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{}")))
+            }
+    )
     @PatchMapping("/nickname")
     public ResponseEntity<Map<String, Object>> updateNickname(
             @RequestHeader("Authorization") String authHeader,
@@ -210,54 +242,5 @@ public class UserController {
             response.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-    }
-@Operation(summary = "홈4 - 특정 날짜의 지출에 대한 리액션을 추가하는 POST method api입니다")
-    @PostMapping("/submit-reaction")
-    public ResponseEntity<Map<String, Object>> submitReaction(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestParam LocalDate date,
-            @RequestParam String reactionType) {
-
-        Long kakaoId = extractKakaoIdFromJwt(authHeader);
-
-        // SpendingService를 호출하여 감정을 리액션으로 저장
-        spendingService.submitReaction(kakaoId, date, reactionType);
-
-        // 응답 메시지를 Map 형식으로 구성
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "오늘의 리액션이 성공적으로 추가되었습니다");
-        response.put("date", date);
-        response.put("reaction", reactionType);
-
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "홈5 - 특정 월의 모든 지출 내역에 대한 감정 리스트 조회하는 POST method api", description = "해당 월의 지출 내역에 대한 리액션 목록을 반환합니다.")
-    @PostMapping("/reactions/by-month")
-    public ResponseEntity<Map<String, Object>> getReactionsByMonth(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM") String month) {
-
-        Long kakaoId = extractKakaoIdFromJwt(authHeader);
-
-        LocalDate startDate = LocalDate.parse(month + "-01");
-        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
-
-        List<Spending> spendingList = spendingService.getSpendingListByDateRange(kakaoId, startDate, endDate);
-
-        List<Map<String, Object>> reactionsList = spendingList.stream()
-                .map(spending -> {
-                    Map<String, Object> spendingData = new HashMap<>();
-                    spendingData.put("date", spending.getDate());
-                    spendingData.put("reactions", spending.getReactions());
-                    return spendingData;
-                })
-                .collect(Collectors.toList());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("month", month);
-        response.put("reactionsList", reactionsList);
-
-        return ResponseEntity.ok(response);
     }
 }
