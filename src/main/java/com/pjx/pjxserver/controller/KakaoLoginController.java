@@ -92,15 +92,16 @@ public class KakaoLoginController {
             )
     })
     @GetMapping("/api/kakao/callback")
-    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
-            @RequestParam
-            @Parameter(description = "카카오로부터 받은 인증 코드") String code,
-            @RequestParam
-            @Parameter(description = "(local 또는 prod)") String origin) {
-        return kakaoService.getAccessToken(code, origin)
-                .map(ResponseEntity::ok)
-                .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
-    }
+public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
+        @RequestParam
+        @Parameter(description = "카카오로부터 받은 인증 코드") String code,
+        HttpServletRequest request) {
+    // HTTP 요청의 Origin 헤더 가져오기
+    String origin = request.getHeader("Origin");
+    return kakaoService.getAccessToken(code, origin)
+            .map(ResponseEntity::ok)
+            .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
+}
 
     @Operation(
             summary = "Access Token으로 카카오 유저 정보 가져오고 사용자 저장",
