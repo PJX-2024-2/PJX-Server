@@ -58,7 +58,7 @@ public class KakaoService {
     }
 
     private String determineRedirectUri(String origin) {
-        if (origin != null && origin.contains("localhost")) {
+        if (origin != null && origin.contains("localhost:5173")) {
             log.debug("Using local redirect URI for origin: {}", origin);
             return localRedirectUri;
         }
