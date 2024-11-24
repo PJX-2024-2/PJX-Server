@@ -1,6 +1,7 @@
 package com.pjx.pjxserver.controller;
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import com.pjx.pjxserver.common.JwtUtil;
 import com.pjx.pjxserver.domain.User;
@@ -20,12 +21,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "카카오", description = "카카오 로그인 API")
@@ -68,6 +71,43 @@ public class KakaoLoginController {
 
 
 
+//    @Operation(
+//            summary = "Access Token과 Refresh Token을 얻기 위한 API",
+//            description = "카카오 인증 코드로 액세스 토큰과 리프레시 토큰을 발급받습니다.",
+//            security = @SecurityRequirement(name = "")
+//    )
+//    @ApiResponses(value = {
+//            @ApiResponse(
+//                    responseCode = "200",
+//                    description = "토큰 발급 성공",
+//                    content = @Content(
+//                            mediaType = "application/json",
+//                            schema = @Schema(implementation = KakaoTokenResponseDto.class),
+//                            examples = @ExampleObject(
+//                                    value = """
+//                    {
+//                        "access_token": "access_token_value",
+//                        "refresh_token": "refresh_token_value",
+//                        "expires_in": 21599,
+//                        "refresh_token_expires_in": 5183999
+//                    }
+//                    """
+//                            )
+//                    )
+//            )
+//    })
+//   @GetMapping("/api/kakao/callback")
+//public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
+//        @RequestParam
+//        @Parameter(description = "카카오로부터 받은 인증 코드") String code,
+//        ServerHttpRequest request) {
+//    // HTTP 요청의 Origin 헤더 가져오기
+//    String origin = request.getHeaders().getFirst("Origin");
+//    return kakaoService.getAccessToken(code, origin)
+//            .map(ResponseEntity::ok)
+//            .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
+//}
+
     @Operation(
             summary = "Access Token과 Refresh Token을 얻기 위한 API",
             description = "카카오 인증 코드로 액세스 토큰과 리프레시 토큰을 발급받습니다.",
@@ -91,19 +131,34 @@ public class KakaoLoginController {
                     """
                             )
                     )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                    {
+                        "error": "invalid_request",
+                        "error_description": "Invalid request parameters"
+                    }
+                    """
+                            )
+                    )
             )
     })
-   @GetMapping("/api/kakao/callback")
-public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
-        @RequestParam
-        @Parameter(description = "카카오로부터 받은 인증 코드") String code,
-        ServerHttpRequest request) {
-    // HTTP 요청의 Origin 헤더 가져오기
-    String origin = request.getHeaders().getFirst("Origin");
-    return kakaoService.getAccessToken(code, origin)
-            .map(ResponseEntity::ok)
-            .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
-}
+    @GetMapping("/api/kakao/callback")
+    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
+            @RequestParam @Parameter(description = "카카오로부터 받은 인증 코드") String code,
+            @RequestHeader(value = "Origin", required = false) @Parameter(hidden = true) String origin) {
+        return kakaoService.getAccessToken(code, origin)
+                .map(ResponseEntity::ok)
+                .onErrorResume(e -> {
+                    log.error("Error processing kakao callback", e);
+                    return Mono.just(ResponseEntity.badRequest().build());
+                });
+    }
 
     @Operation(
             summary = "Access Token으로 카카오 유저 정보 가져오고 사용자 저장",
