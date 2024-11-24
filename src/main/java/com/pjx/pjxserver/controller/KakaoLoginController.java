@@ -94,9 +94,10 @@ public class KakaoLoginController {
     @GetMapping("/api/kakao/callback")
     public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
             @RequestParam
-            @Parameter(description = "카카오로부터 받은 인증 코드")
-            String code) {
-        return kakaoService.getAccessToken(code)
+            @Parameter(description = "카카오로부터 받은 인증 코드") String code,
+            @RequestParam
+            @Parameter(description = "요청의 출처 (local 또는 prod)") String origin) {
+        return kakaoService.getAccessToken(code, origin)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
     }
