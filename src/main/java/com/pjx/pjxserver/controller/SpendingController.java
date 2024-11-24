@@ -2,8 +2,12 @@ package com.pjx.pjxserver.controller;
 
 import com.pjx.pjxserver.common.JwtUtil;
 import com.pjx.pjxserver.domain.Spending;
+import com.pjx.pjxserver.service.SpendingGoalService;
 import com.pjx.pjxserver.service.SpendingService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,11 +22,16 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/spending/manual")
+@RequestMapping("/api/spending")
+@RequiredArgsConstructor
+@Tag(name = "지출", description = "지출 관련 API")
 public class SpendingController {
 
     @Autowired
     private SpendingService spendingService;
+
+    @Autowired
+    private SpendingGoalService spendingGoalService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -40,7 +49,9 @@ public class SpendingController {
     @PostMapping("/select-method")
     public ResponseEntity<Map<String, String>> selectSpendingMethod(
             @RequestHeader("Authorization") String authHeader,
-            @RequestParam String method) {
+            @RequestParam
+            @Parameter(description = "사용자가 선택한 등록 방식", example = "AI_RECEIPT 또는 MANUAL")
+            String method) {
 
         Long kakaoId = extractKakaoIdFromJwt(authHeader);
 
@@ -62,11 +73,16 @@ public class SpendingController {
     @PostMapping(value = "/create", consumes = "multipart/form-data")
     public ResponseEntity<Map<String, Object>> createSpending(
             @RequestHeader("Authorization") String authHeader,
-            @RequestParam String date,
-            @RequestParam BigDecimal amount,
-            @RequestParam String description,
-            @RequestParam(required = false) String note,
-            @RequestParam(required = false) List<MultipartFile> images) {
+            @RequestParam
+            @Parameter(description = "지출 날짜 (YYYY-MM-DD 형식)", example = "2024-11-24") String date,
+            @RequestParam
+            @Parameter(description = "지출 금액", example = "50000") BigDecimal amount,
+            @RequestParam
+            @Parameter(description = "지출 설명", example = "점심 식사") String description,
+            @RequestParam(required = false)
+            @Parameter(description = "지출 추가 정보", example = "친구와 점심") String note,
+            @RequestParam(required = false)
+            @Parameter(description = "지출 관련 이미지") List<MultipartFile> images) {
 
         Long kakaoId = extractKakaoIdFromJwt(authHeader);
         LocalDate spendingDate = LocalDate.parse(date);
@@ -109,7 +125,9 @@ public class SpendingController {
     @DeleteMapping("/delete")
     public ResponseEntity<Map<String, String>> deleteSpending(
             @RequestHeader("Authorization") String authHeader,
-            @RequestParam Long spendingId) {
+            @RequestParam
+            @Parameter(description = "삭제할 지출 항목의 ID", example = "1")
+            Long spendingId) {
 
         Long kakaoId = extractKakaoIdFromJwt(authHeader);
         spendingService.deleteSpending(spendingId);
@@ -124,7 +142,9 @@ public class SpendingController {
     @GetMapping("/detail")
     public ResponseEntity<Map<String, Object>> getSpendingDetail(
             @RequestHeader("Authorization") String authHeader,
-            @RequestParam Long spendingId) {
+            @RequestParam
+            @Parameter(description = "지출 항목 ID", example = "1")
+            Long spendingId) {
 
         Long kakaoId = extractKakaoIdFromJwt(authHeader);
         Spending spending = spendingService.getSpendingDetail(spendingId)
@@ -140,7 +160,9 @@ public class SpendingController {
     @PostMapping("/list")
     public ResponseEntity<Map<String, Object>> getSpendingListByDate(
             @RequestHeader("Authorization") String authHeader,
-            @RequestParam String date) {
+            @RequestParam
+            @Parameter(description = "조회할 날짜 (YYYY-MM-DD 형식)", example = "2024-11-24")
+            String date) {
 
         Long kakaoId = extractKakaoIdFromJwt(authHeader);
         LocalDate spendingDate = LocalDate.parse(date);
@@ -161,6 +183,76 @@ public class SpendingController {
         Map<String, Object> response = new HashMap<>();
         response.put("date", date);
         response.put("spendingList", spendingData);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    // 이번달 총 지출을 조회하는 GET 메서드
+    @Operation(summary = "이번달 총 지출 조회")
+    @GetMapping("/current")
+    public ResponseEntity<Map<String, Object>> getCurrentSpending(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam
+            @Parameter(description = "조회할 월 (YYYY-MM 형식)", example = "2024-11")
+            String month) {
+
+        Long kakaoId = extractKakaoIdFromJwt(authHeader);
+        LocalDate monthDate = LocalDate.parse(month + "-01");
+        BigDecimal currentSpending = spendingGoalService.getCurrentSpending(kakaoId, monthDate);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("currentSpending", currentSpending);
+        response.put("month", month);
+
+        return ResponseEntity.ok(response);
+    }
+
+//    // 특정 날짜의 지출 항목을 추가하는 POST 메서드
+//    @Operation(summary = "특정 날짜의 지출 항목 추가")
+//    @PostMapping("/expense")
+//    public ResponseEntity<Expense> addExpense(
+//            @RequestHeader("Authorization") String authHeader,
+//            @RequestParam String date,
+//            @RequestParam BigDecimal amount) {
+//
+//        Long kakaoId = extractKakaoIdFromJwt(authHeader);
+//        LocalDate expenseDate = LocalDate.parse(date);
+//        Expense newExpense = spendingService.addExpense(kakaoId, expenseDate, amount);
+//
+//        return ResponseEntity.ok(newExpense);
+//    }
+
+    // 오늘의 지출을 조회하는 GET 메서드
+    @Operation(summary = "오늘 지출 조회")
+    @GetMapping("/today")
+    public ResponseEntity<Map<String, Object>> getTodaySpending(@RequestHeader("Authorization") String authHeader) {
+        Long kakaoId = extractKakaoIdFromJwt(authHeader);
+        BigDecimal todaySpending = spendingGoalService.getTodaySpending(kakaoId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("todaySpending", todaySpending);
+        response.put("date", LocalDate.now());
+
+        return ResponseEntity.ok(response);
+    }
+
+    // 특정 날짜의 지출을 조회하는 GET 메서드
+    @Operation(summary = "특정 날짜의 지출 조회 YYYY-MM-DD형식으로")
+    @GetMapping("/date")
+    public ResponseEntity<Map<String, Object>> getSpendingByDate(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam
+            @Parameter(description = "조회할 날짜 (YYYY-MM-DD 형식)", example = "2024-11-24")
+            String date) {
+
+        Long kakaoId = extractKakaoIdFromJwt(authHeader);
+        LocalDate specificDate = LocalDate.parse(date);
+        BigDecimal spendingByDate = spendingGoalService.getSpendingByDate(kakaoId, specificDate);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("spendingByDate", spendingByDate);
+        response.put("date", specificDate);
 
         return ResponseEntity.ok(response);
     }
