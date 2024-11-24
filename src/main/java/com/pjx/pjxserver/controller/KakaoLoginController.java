@@ -1,7 +1,7 @@
 package com.pjx.pjxserver.controller;
 
 
-import javax.servlet.http.HttpServletRequest;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import com.pjx.pjxserver.common.JwtUtil;
 import com.pjx.pjxserver.domain.User;
 import com.pjx.pjxserver.dto.KakaoTokenResponseDto;
@@ -93,13 +93,13 @@ public class KakaoLoginController {
                     )
             )
     })
-    @GetMapping("/api/kakao/callback")
+   @GetMapping("/api/kakao/callback")
 public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
         @RequestParam
         @Parameter(description = "카카오로부터 받은 인증 코드") String code,
-        HttpServletRequest request) {
+        ServerHttpRequest request) {
     // HTTP 요청의 Origin 헤더 가져오기
-    String origin = request.getHeader("Origin");
+    String origin = request.getHeaders().getFirst("Origin");
     return kakaoService.getAccessToken(code, origin)
             .map(ResponseEntity::ok)
             .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
