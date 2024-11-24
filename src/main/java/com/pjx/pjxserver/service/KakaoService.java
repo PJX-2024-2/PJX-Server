@@ -43,7 +43,8 @@ public class KakaoService {
                         "&code=" + code +
                         "&client_secret=" + clientSecret)
                 .retrieve()
-                .bodyToMono(KakaoTokenResponseDto.class);
+                .bodyToMono(KakaoTokenResponseDto.class)
+                .doOnError(e -> log.error("Error getting access token from Kakao", e));
     }
 
     public Mono<KakaoUserInfoResponseDto> getUserInfo(String accessToken) {
@@ -53,18 +54,15 @@ public class KakaoService {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .retrieve()
                 .bodyToMono(KakaoUserInfoResponseDto.class);
+
     }
 
     private String determineRedirectUri(String origin) {
-        if (origin == null) {
-            log.warn("Origin header is missing. Defaulting to prod redirect_uri.");
-            return prodRedirectUri; // 기본값으로 배포 환경 URI 사용
+        if (origin != null && origin.contains("localhost")) {
+            log.debug("Using local redirect URI for origin: {}", origin);
+            return localRedirectUri;
         }
-
-        if (origin.contains("localhost")) {
-            return localRedirectUri; // 로컬 환경
-        }
-
-        return prodRedirectUri; // 배포 환경
+        log.debug("Using production redirect URI");
+        return prodRedirectUri;
     }
 }
