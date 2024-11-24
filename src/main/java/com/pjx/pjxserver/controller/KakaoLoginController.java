@@ -39,7 +39,7 @@ public class KakaoLoginController {
     @Value("${kakao.client_id}")
     private String clientId;
 
-    @Value("${kakao.redirect_uri}")
+    @Value("${kakao.redirect_uri.local}")
     private String redirectUri;
 
     @Operation(
