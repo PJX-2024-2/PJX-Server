@@ -98,25 +98,6 @@ public class UserController {
     }
 
     @Operation(
-            summary = "프로필 이미지 삭제",
-            description = "사용자의 프로필 이미지를 삭제합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "삭제 성공",
-                            content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
-                    @ApiResponse(responseCode = "400", description = "잘못된 요청",
-                            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{}")))
-            }
-    )
-    @DeleteMapping("/profile/delete")
-    public ResponseEntity<String> deleteProfile(@RequestHeader("Authorization") String authHeader) {
-        Long kakaoId = extractKakaoIdFromJwt(authHeader);
-
-        userService.deleteProfileImage(kakaoId);
-        return ResponseEntity.ok("프로필 삭제 완료!\n");
-    }
-
-
-    @Operation(
             summary = "친구 팔로우 추가",
             description = "친구 닉네임을 통해 팔로우를 추가합니다.",
             responses = {
