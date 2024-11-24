@@ -5,6 +5,11 @@ import com.pjx.pjxserver.domain.Expense;
 import com.pjx.pjxserver.domain.SpendingGoal;
 import com.pjx.pjxserver.service.SpendingGoalService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 @RestController
 @RequestMapping("/api/spending")
+@RequiredArgsConstructor
+@Tag(name = "지출 목표", description = "지출 목표 관련 API")
 public class SpendingGoalController {
 
     @Autowired
@@ -33,21 +40,70 @@ public class SpendingGoalController {
     }
 
     // 유저가 한달 목표를 설정하는 PUT 메서드
-    @Operation(summary = "홈 - 유저가 한달 목표를 설정하는 PUT method api")
+    @Operation(summary = "홈 - 한 달 목표 설정", description = "유저가 한달 목표를 설정하는 PUT method api",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "목표 설정 성공",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = """
+                                                    {
+                                                      "id": 3,
+                                                      "user": {
+                                                        "id": 7,
+                                                        "kakaoId": 375402,
+                                                        "nickname": "포차코",
+                                                        "userNickname": "코코",
+                                                        "profileImageUrl": "프로필 url"
+                                                      },
+                                                      "monthlyGoal": 50000,
+                                                      "currentSpending": 0,
+                                                      "goalDate": "2024-11-01"
+                                                    }
+                                    """
+                                    )
+                            )
+                    )
+            }
+    )
     @PutMapping("/goal")
     public ResponseEntity<SpendingGoal> setMonthlyGoal(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestParam BigDecimal goal) {
+            @RequestHeader("Authorization")
+            String authHeader,
+            @RequestParam
+            @Parameter(description = "사용자가 설정할 한 달 목표 금액", example = "500000")
+            BigDecimal goal) {
 
         Long kakaoId = extractKakaoIdFromJwt(authHeader);
         SpendingGoal monthlyGoal = spendingService.setMonthlyGoal(kakaoId, goal);
         return ResponseEntity.ok(monthlyGoal);
     }
 
+
     // 유저가 설정한 한달 목표 지출을 가져오는 GET 메서드
-    @Operation(summary = "홈1 - 유저가 설정한 한달 목표 지출을 받을 수 있는 GET method api")
+    @Operation(summary = "홈1 - 한 달 목표 조회", description = "유저가 설정한 한달 목표 지출을 받을 수 있는 GET method api",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "목표 조회 성공",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = """
+                                    {
+                                        "goal": 500000
+                                    }
+                                    """
+                                    )
+                            )
+                    )
+            })
     @GetMapping("/goal")
-    public ResponseEntity<Map<String, Object>> getMonthlyGoal(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<Map<String, Object>> getMonthlyGoal(
+            @RequestHeader("Authorization")
+            String authHeader) {
         Long kakaoId = extractKakaoIdFromJwt(authHeader);
         BigDecimal monthlyGoal = spendingService.getMonthlyGoal(kakaoId);
 
@@ -58,79 +114,45 @@ public class SpendingGoalController {
     }
 
     // 유저가 한달 목표 지출을 수정하는 POST 메서드
-    @Operation(summary = "홈2 - 유저가 수정한 한달 목표 지출을 보낼 수 있는 POST method api")
+    @Operation(summary = "홈2 - 한 달 목표 수정", description = "유저가 수정한 한달 목표 지출을 보낼 수 있는 POST method api",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "목표 수정 성공",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = """
+                                    {
+                                                      "id": 3,
+                                                      "user": {
+                                                        "id": 7,
+                                                        "kakaoId": 375402,
+                                                        "nickname": "포차코",
+                                                        "userNickname": "코코",
+                                                        "profileImageUrl": "프로필 url"
+                                                      },
+                                                      "monthlyGoal": 80000,
+                                                      "currentSpending": 0,
+                                                      "goalDate": "2024-11-01"
+                                                    }
+                                    """
+                                    )
+                            )
+                    )
+            })
     @PostMapping("/goal")
     public ResponseEntity<SpendingGoal> updateMonthlyGoal(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestParam BigDecimal newGoal) {
+            @RequestHeader("Authorization")
+            String authHeader,
+
+            @RequestParam
+            @Parameter(description = "사용자가 수정할 한 달 목표 금액", example = "600000")
+            BigDecimal newGoal) {
 
         Long kakaoId = extractKakaoIdFromJwt(authHeader);
         SpendingGoal updatedGoal = spendingService.updateMonthlyGoal(kakaoId, newGoal);
         return ResponseEntity.ok(updatedGoal);
     }
 
-    // 이번달 총 지출을 조회하는 GET 메서드
-    @Operation(summary = "이번달 총 지출 조회")
-    @GetMapping("/current")
-    public ResponseEntity<Map<String, Object>> getCurrentSpending(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestParam String month) {
-
-        Long kakaoId = extractKakaoIdFromJwt(authHeader);
-        LocalDate monthDate = LocalDate.parse(month + "-01");
-        BigDecimal currentSpending = spendingService.getCurrentSpending(kakaoId, monthDate);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("currentSpending", currentSpending);
-        response.put("month", month);
-
-        return ResponseEntity.ok(response);
-    }
-
-    // 특정 날짜의 지출 항목을 추가하는 POST 메서드
-    @Operation(summary = "특정 날짜의 지출 항목 추가")
-    @PostMapping("/expense")
-    public ResponseEntity<Expense> addExpense(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestParam String date,
-            @RequestParam BigDecimal amount) {
-
-        Long kakaoId = extractKakaoIdFromJwt(authHeader);
-        LocalDate expenseDate = LocalDate.parse(date);
-        Expense newExpense = spendingService.addExpense(kakaoId, expenseDate, amount);
-
-        return ResponseEntity.ok(newExpense);
-    }
-
-    // 오늘의 지출을 조회하는 GET 메서드
-    @Operation(summary = "오늘 지출 조회")
-    @GetMapping("/today")
-    public ResponseEntity<Map<String, Object>> getTodaySpending(@RequestHeader("Authorization") String authHeader) {
-        Long kakaoId = extractKakaoIdFromJwt(authHeader);
-        BigDecimal todaySpending = spendingService.getTodaySpending(kakaoId);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("todaySpending", todaySpending);
-        response.put("date", LocalDate.now());
-
-        return ResponseEntity.ok(response);
-    }
-
-    // 특정 날짜의 지출을 조회하는 GET 메서드
-    @Operation(summary = "특정 날짜의 지출 조회 YYYY-MM-DD형식으로")
-    @GetMapping("/date")
-    public ResponseEntity<Map<String, Object>> getSpendingByDate(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestParam String date) {
-
-        Long kakaoId = extractKakaoIdFromJwt(authHeader);
-        LocalDate specificDate = LocalDate.parse(date);
-        BigDecimal spendingByDate = spendingService.getSpendingByDate(kakaoId, specificDate);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("spendingByDate", spendingByDate);
-        response.put("date", specificDate);
-
-        return ResponseEntity.ok(response);
-    }
 }
