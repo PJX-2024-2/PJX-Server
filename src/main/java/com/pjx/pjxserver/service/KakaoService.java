@@ -34,6 +34,7 @@ public class KakaoService {
     private final WebClient.Builder webClientBuilder;
 
     public Mono<KakaoTokenResponseDto> getAccessToken(String code, String origin) {
+        log.info("Received Origin header: {}", origin);
         String redirectUri = determineRedirectUri(origin);
         log.info("Using redirect_uri: {}", redirectUri);
 
@@ -74,11 +75,11 @@ public class KakaoService {
     }
 
     private String determineRedirectUri(String origin) {
-        if (origin != null && origin.contains("localhost:5173")) {
-            log.debug("Using local redirect URI for origin: {}", origin);
-            return localRedirectUri;
+        if (origin != null && origin.contains("https://pjx-client.vercel.app")) {
+            log.debug("Using prod redirect URI for origin: {}", origin);
+            return prodRedirectUri;
         }
-        log.debug("Using production redirect URI");
-        return prodRedirectUri;
+        log.debug("Using local redirect URI");
+        return localRedirectUri;
     }
 }
