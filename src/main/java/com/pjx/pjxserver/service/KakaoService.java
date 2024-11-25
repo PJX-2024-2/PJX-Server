@@ -113,11 +113,8 @@ public class KakaoService {
     @Value("${kakao.client_secret}")
     private String clientSecret;
 
-    @Value("${kakao.redirect_uri.local}")
-    private String localRedirectUri;
-
-    @Value("${kakao.redirect_uri.prod}")
-    private String prodRedirectUri;
+    @Value("${kakao.redirect_uri}")
+    private String redirectUri;
 
     private final WebClient.Builder webClientBuilder;
 
@@ -149,25 +146,15 @@ public class KakaoService {
 //        return prodRedirectUri;
 //    }
 
-    public Mono<KakaoTokenResponseDto> getAccessToken(String code, String environment) {
-        String redirectUri = determineRedirectUri(environment);
-
-        log.info("Using redirect_uri: {}", redirectUri);
-
+    public Mono<KakaoTokenResponseDto> getAccessToken(String code) {
         return webClientBuilder.build()
                 .post()
                 .uri("https://kauth.kakao.com/oauth/token")
                 .header(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .bodyValue("grant_type=authorization_code&client_id=" + clientId +
-                        "&redirect_uri=" + redirectUri +
-                        "&code=" + code +
-                        "&client_secret=" + clientSecret)
+                .bodyValue("grant_type=authorization_code&client_id=" + clientId + "&redirect_uri=" + redirectUri +
+                        "&code=" + code + "&client_secret=" + clientSecret)
                 .retrieve()
                 .bodyToMono(KakaoTokenResponseDto.class);
-    }
-
-    private String determineRedirectUri(String environment) {
-        return environment.equals("local") ? localRedirectUri : prodRedirectUri;
     }
 
 
