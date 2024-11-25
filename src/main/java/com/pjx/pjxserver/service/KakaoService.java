@@ -34,8 +34,9 @@ public class KakaoService {
     private final WebClient.Builder webClientBuilder;
 
     public Mono<KakaoTokenResponseDto> getAccessToken(String code, String origin) {
-        log.info("Received Origin header: {}", origin);
+
         String redirectUri = determineRedirectUri(origin);
+        log.info("Received Origin header: {}", origin);
         log.info("Using redirect_uri: {}", redirectUri);
 
         log.info("Request parameters: client_id={}, redirect_uri={}, code={}, client_secret={}",
