@@ -139,59 +139,81 @@ public class KakaoLoginController {
 //}
 
 
+//    @PostMapping("/api/kakao/callback")
+//    @Operation(
+//            summary = "Access Token과 Refresh Token을 얻기 위한 API",
+//            description = "카카오 인증 코드로 액세스 토큰과 리프레시 토큰을 발급받습니다.",
+//            security = @SecurityRequirement(name = "")
+//    )
+//    @ApiResponses(value = {
+//            @ApiResponse(
+//                    responseCode = "200",
+//                    description = "토큰 발급 성공",
+//                    content = @Content(
+//                            mediaType = "application/json",
+//                            schema = @Schema(implementation = KakaoTokenResponseDto.class),
+//                            examples = @ExampleObject(
+//                                    value = """
+//                    {
+//                        "access_token": "access_token_value",
+//                        "refresh_token": "refresh_token_value",
+//                        "expires_in": 21599,
+//                        "refresh_token_expires_in": 5183999
+//                    }
+//                    """
+//                            )
+//                    )
+//            ),
+//            @ApiResponse(
+//                    responseCode = "400",
+//                    description = "잘못된 요청",
+//                    content = @Content(
+//                            mediaType = "application/json",
+//                            examples = @ExampleObject(
+//                                    value = """
+//                    {
+//                        "error": "invalid_request",
+//                        "error_description": "Invalid request parameters"
+//                    }
+//                    """
+//                            )
+//                    )
+//            )
+//    })
+//    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
+//            @RequestBody
+//            @Parameter(description = "카카오로부터 받은 인증 코드")
+//            KakaoCallbackRequestDto requestDto) {
+//
+//        String code = requestDto.getCode();
+//        return kakaoService.getAccessToken(code)
+//                .map(ResponseEntity::ok)
+//                .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
+//    }
+
+
     @PostMapping("/api/kakao/callback")
     @Operation(
             summary = "Access Token과 Refresh Token을 얻기 위한 API",
-            description = "카카오 인증 코드로 액세스 토큰과 리프레시 토큰을 발급받습니다.",
-            security = @SecurityRequirement(name = "")
+            description = "카카오 인증 코드로 액세스 토큰과 리프레시 토큰을 발급받습니다."
     )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "토큰 발급 성공",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = KakaoTokenResponseDto.class),
-                            examples = @ExampleObject(
-                                    value = """
-                    {
-                        "access_token": "access_token_value",
-                        "refresh_token": "refresh_token_value",
-                        "expires_in": 21599,
-                        "refresh_token_expires_in": 5183999
-                    }
-                    """
-                            )
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "잘못된 요청",
-                    content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    value = """
-                    {
-                        "error": "invalid_request",
-                        "error_description": "Invalid request parameters"
-                    }
-                    """
-                            )
-                    )
-            )
-    })
     public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
             @RequestBody
             @Parameter(description = "카카오로부터 받은 인증 코드")
-            KakaoCallbackRequestDto requestDto) {
+            KakaoCallbackRequestDto requestDto,
+            HttpServletRequest request) {
 
         String code = requestDto.getCode();
-        return kakaoService.getAccessToken(code)
+
+        // 요청의 host 정보로 로컬 환경인지 판단
+        String host = request.getServerName();
+        boolean isLocal = host.contains("localhost") || host.startsWith("127.0.0.1");
+
+        // 로컬 환경과 프로덕션 환경에 따른 로직 처리
+        return kakaoService.getAccessToken(code, isLocal ? "local" : "prod")
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
     }
-
-
 
 
     @Operation(
