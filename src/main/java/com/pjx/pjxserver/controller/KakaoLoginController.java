@@ -249,4 +249,12 @@ public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
                     )));
                 });
     }
+
+
+     @GetMapping ("/test")
+    public ResponseEntity<Void> getBoard(HttpServletRequest request) {
+        String serverName = request.getServerName();
+        System.out. println (serverName) ;
+        return ResponseEntity.ok().build();
+    }
 }
