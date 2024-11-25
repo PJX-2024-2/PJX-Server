@@ -1,12 +1,9 @@
 package com.pjx.pjxserver.controller;
 
 
-import com.pjx.pjxserver.dto.KakaoCallbackRequestDto;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.server.reactive.ServerHttpRequest;
 import com.pjx.pjxserver.common.JwtUtil;
 import com.pjx.pjxserver.domain.User;
+import com.pjx.pjxserver.dto.KakaoCallbackRequestDto;
 import com.pjx.pjxserver.dto.KakaoTokenResponseDto;
 import com.pjx.pjxserver.service.KakaoService;
 import com.pjx.pjxserver.service.UserService;
@@ -19,7 +16,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,11 +40,9 @@ public class KakaoLoginController {
     @Value("${kakao.client_id}")
     private String clientId;
 
-    @Value("${kakao.redirect_uri.local}")
-    private String redirectUri_local;
+    @Value("${kakao.redirect_uri}")
+    private String redirectUri;
 
-    @Value("${kakao.redirect_uri.prod}")
-    private String redirectUri_prod;
 
     @Operation(
             summary = "백엔드를 위한 Kakao Login Page URL (배포)",
@@ -66,7 +63,7 @@ public class KakaoLoginController {
     @GetMapping("/api/kakao/login/prod")
     public ResponseEntity<String> kakaoLoginPage_prod() {
         String loginUrl = "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=" +
-                clientId + "&redirect_uri=" + redirectUri_prod;
+                clientId + "&redirect_uri=" + redirectUri;
         return ResponseEntity.ok(loginUrl);
     }
 
@@ -96,7 +93,7 @@ public class KakaoLoginController {
     @GetMapping("/api/kakao/login/local")
     public ResponseEntity<String> kakaoLoginPage_local() {
         String loginUrl = "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=" +
-                clientId + "&redirect_uri=" + redirectUri_local;
+                clientId + "&redirect_uri=" + redirectUri;
         return ResponseEntity.ok(loginUrl);
     }
 
@@ -193,31 +190,18 @@ public class KakaoLoginController {
 
 
     @PostMapping("/api/kakao/callback")
-    @Operation(
-            summary = "Access Token과 Refresh Token을 얻기 위한 API",
-            description = "카카오 인증 코드로 액세스 토큰과 리프레시 토큰을 발급받습니다."
-    )
     public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
             @RequestBody
-            @Parameter(description = "카카오로부터 받은 인증 코드")
-            KakaoCallbackRequestDto requestDto,
-            HttpServletRequest request) {
+            @Parameter(description = "카카오로부터 받은 인증 코드 및 기타 정보")
+            KakaoCallbackRequestDto requestDto) {
 
-        String code = requestDto.getCode();
-        
-        String origin = request.getHeader("Origin");
-        System.out.println("origin : " + origin);
-        
-        
-        // 요청의 host 정보로 로컬 환경인지 판단
-        String host = request.getServerName();
-        boolean isLocal = host.contains("localhost") || host.startsWith("127.0.0.1");
+        String code = requestDto.getCode(); // JSON에서 인증 코드 추출
 
-        // 로컬 환경과 프로덕션 환경에 따른 로직 처리
-        return kakaoService.getAccessToken(code, isLocal ? "local" : "prod")
+        return kakaoService.getAccessToken(code)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
     }
+
 
 
     @Operation(
