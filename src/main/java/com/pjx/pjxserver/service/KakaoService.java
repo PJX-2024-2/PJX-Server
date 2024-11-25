@@ -34,10 +34,9 @@ public class KakaoService {
 
     private final WebClient.Builder webClientBuilder;
 
-    public Mono<KakaoTokenResponseDto> getAccessToken(String code, String origin) {
+    public Mono<KakaoTokenResponseDto> getAccessToken(String code) {
 
-        String redirectUri = determineRedirectUri(origin);
-        log.info("Received Origin header: {}", origin);
+        String redirectUri = determineRedirectUri();
         log.info("Using redirect_uri: {}", redirectUri);
 
         log.info("Request parameters: client_id={}, redirect_uri={}, code={}, client_secret={}",
@@ -75,14 +74,14 @@ public class KakaoService {
                 .bodyToMono(KakaoUserInfoResponseDto.class);
     }
 
-    private String determineRedirectUri(String origin) {
+    private String determineRedirectUri() {
         String currentUri = ServletUriComponentsBuilder.fromCurrentRequest().toUriString();
 
         if (currentUri.contains("localhost")) {
-            log.info("Using local redirect URI for origin: {}", currentUri);
+            log.info("Using local redirect URI for current URI: {}", currentUri);
             return localRedirectUri;
         }
-        log.info("Using prod redirect URI");
+        log.info("Using prod redirect URI for current URI: {}", currentUri);
         return prodRedirectUri;
     }
 }
