@@ -46,7 +46,8 @@ public class KakaoService {
                 .post()
                 .uri("https://kauth.kakao.com/oauth/token")
                 .header(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .header(HttpHeaders.ORIGIN, origin != null ? origin : "https://default-origin.com")
+                .header(HttpHeaders.ORIGIN, origin != null ? origin : "
+                .header(HttpHeaders.ORIGIN, origin != null ? origin : "https://pjx-client.vercel.app/auth/kakao")
                 .bodyValue("grant_type=authorization_code&client_id=" + clientId +
                         "&redirect_uri=" + redirectUri +
                         "&code=" + code +
