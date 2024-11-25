@@ -41,11 +41,14 @@ public class KakaoLoginController {
     @Value("${kakao.client_id}")
     private String clientId;
 
+    @Value("${kakao.redirect_uri.local}")
+    private String redirectUri_local;
+
     @Value("${kakao.redirect_uri.prod}")
-    private String redirectUri;
+    private String redirectUri_prod;
 
     @Operation(
-            summary = "백엔드를 위한 Kakao Login Page URL",
+            summary = "백엔드를 위한 Kakao Login Page URL (배포)",
             description = "카카오 로그인 페이지 URL을 반환합니다.",
             security = @SecurityRequirement(name = "")
     )
@@ -60,14 +63,42 @@ public class KakaoLoginController {
                     )
             )
     )
-    @GetMapping("/api/kakao/login")
-    public ResponseEntity<String> kakaoLoginPage() {
+    @GetMapping("/api/kakao/login/prod")
+    public ResponseEntity<String> kakaoLoginPage_prod() {
         String loginUrl = "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=" +
-                clientId + "&redirect_uri=" + redirectUri;
+                clientId + "&redirect_uri=" + redirectUri_prod;
         return ResponseEntity.ok(loginUrl);
     }
 
+    @GetMapping ("/test")
+    public ResponseEntity<Void> getBoard(HttpServletRequest request) {
+        String serverName = request.getServerName();
+        System.out. println (serverName) ;
+        return ResponseEntity.ok().build();
+    }
 
+    @Operation(
+            summary = "백엔드를 위한 Kakao Login Page URL (로컬)",
+            description = "카카오 로그인 페이지 URL을 반환합니다.",
+            security = @SecurityRequirement(name = "")
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "로그인 URL 반환 성공",
+            content = @Content(
+                    mediaType = "text/plain",
+                    schema = @Schema(type = "string"),
+                    examples = @ExampleObject(
+                            value = "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=your_client_id&redirect_uri=your_redirect_uri"
+                    )
+            )
+    )
+    @GetMapping("/api/kakao/login/local")
+    public ResponseEntity<String> kakaoLoginPage_local() {
+        String loginUrl = "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=" +
+                clientId + "&redirect_uri=" + redirectUri_local;
+        return ResponseEntity.ok(loginUrl);
+    }
 
 
 //    @Operation(
@@ -108,6 +139,7 @@ public class KakaoLoginController {
 //}
 
 
+    @PostMapping("/api/kakao/callback")
     @Operation(
             summary = "Access Token과 Refresh Token을 얻기 위한 API",
             description = "카카오 인증 코드로 액세스 토큰과 리프레시 토큰을 발급받습니다.",
@@ -122,13 +154,13 @@ public class KakaoLoginController {
                             schema = @Schema(implementation = KakaoTokenResponseDto.class),
                             examples = @ExampleObject(
                                     value = """
-                        {
-                            "access_token": "access_token_value",
-                            "refresh_token": "refresh_token_value",
-                            "expires_in": 21599,
-                            "refresh_token_expires_in": 5183999
-                        }
-                        """
+                    {
+                        "access_token": "access_token_value",
+                        "refresh_token": "refresh_token_value",
+                        "expires_in": 21599,
+                        "refresh_token_expires_in": 5183999
+                    }
+                    """
                             )
                     )
             ),
@@ -139,25 +171,25 @@ public class KakaoLoginController {
                             mediaType = "application/json",
                             examples = @ExampleObject(
                                     value = """
-                        {
-                            "error": "invalid_request",
-                            "error_description": "Invalid request parameters"
-                        }
-                        """
+                    {
+                        "error": "invalid_request",
+                        "error_description": "Invalid request parameters"
+                    }
+                    """
                             )
                     )
             )
     })
-    @PostMapping("/api/kakao/callback")
-public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
-        @RequestBody
-        @Parameter(description = "카카오로부터 받은 인증 코드")
-        Map<String, String> requestBody) {
-    String code = requestBody.get("code");
-    return kakaoService.getAccessToken(code)
-            .map(ResponseEntity::ok)
-            .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
-}
+    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
+            @RequestBody
+            @Parameter(description = "카카오로부터 받은 인증 코드")
+            KakaoCallbackRequestDto requestDto) {
+
+        String code = requestDto.getCode();
+        return kakaoService.getAccessToken(code)
+                .map(ResponseEntity::ok)
+                .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
+    }
 
 
 
@@ -249,13 +281,5 @@ public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
                             "error", e.getMessage()
                     )));
                 });
-    }
-
-
-     @GetMapping ("/test")
-    public ResponseEntity<Void> getBoard(HttpServletRequest request) {
-        String serverName = request.getServerName();
-        System.out. println (serverName) ;
-        return ResponseEntity.ok().build();
     }
 }
