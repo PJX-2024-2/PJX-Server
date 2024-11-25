@@ -20,10 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
@@ -122,13 +119,13 @@ public class KakaoLoginController {
                             schema = @Schema(implementation = KakaoTokenResponseDto.class),
                             examples = @ExampleObject(
                                     value = """
-                    {
-                        "access_token": "access_token_value",
-                        "refresh_token": "refresh_token_value",
-                        "expires_in": 21599,
-                        "refresh_token_expires_in": 5183999
-                    }
-                    """
+                        {
+                            "access_token": "access_token_value",
+                            "refresh_token": "refresh_token_value",
+                            "expires_in": 21599,
+                            "refresh_token_expires_in": 5183999
+                        }
+                        """
                             )
                     )
             ),
@@ -139,16 +136,16 @@ public class KakaoLoginController {
                             mediaType = "application/json",
                             examples = @ExampleObject(
                                     value = """
-                    {
-                        "error": "invalid_request",
-                        "error_description": "Invalid request parameters"
-                    }
-                    """
+                        {
+                            "error": "invalid_request",
+                            "error_description": "Invalid request parameters"
+                        }
+                        """
                             )
                     )
             )
     })
-    @GetMapping("/api/kakao/callback")
+    @PostMapping("/api/kakao/callback")
     public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
             @RequestParam @Parameter(description = "카카오로부터 받은 인증 코드") String code) {
         return kakaoService.getAccessToken(code)
@@ -158,6 +155,7 @@ public class KakaoLoginController {
                     return Mono.just(ResponseEntity.badRequest().build());
                 });
     }
+
 
     @Operation(
             summary = "Access Token으로 카카오 유저 정보 가져오고 사용자 저장",
