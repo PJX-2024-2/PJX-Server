@@ -206,46 +206,46 @@ public class KakaoLoginController {
                     )
             )
     })
-@GetMapping("/api/kakao/userinfo")
-public Mono<ResponseEntity<Map<String, Object>>> saveOrUpdateUserInfo(
+    @GetMapping("/api/kakao/userinfo")
+    public Mono<ResponseEntity<Map<String, Object>>> saveOrUpdateUserInfo(
             @RequestParam
             @Parameter(description = "카카오 액세스 토큰")
             String accessToken) {
-    return kakaoService.getUserInfo(accessToken)
-            .flatMap(userInfo -> {
-                // 사용자 정보 저장/업데이트
-                Map<String, Object> result = userService.saveOrUpdateUser(
-                        userInfo.getId(),
-                        userInfo.getProperties().getNickname(), // 카카오 닉네임
-                        userInfo.getProperties().getUserNickname(), // 애플리케이션에서 설정한 닉네임
-                        userInfo.getProperties().getProfileImage() // 프로필 이미지
-                );
+        return kakaoService.getUserInfo(accessToken)
+                .flatMap(userInfo -> {
+                    // 사용자 정보 저장/업데이트
+                    Map<String, Object> result = userService.saveOrUpdateUser(
+                            userInfo.getId(),
+                            userInfo.getProperties().getNickname(), // 카카오 닉네임
+                            userInfo.getProperties().getUserNickname(), // 애플리케이션에서 설정한 닉네임
+                            userInfo.getProperties().getProfileImage() // 프로필 이미지
+                    );
 
-                // 응답 데이터 생성
-                String status = (String) result.get("status");
-                String message = (String) result.get("message");
-                User user = (User) result.get("user");
+                    // 응답 데이터 생성
+                    String status = (String) result.get("status");
+                    String message = (String) result.get("message");
+                    User user = (User) result.get("user");
 
-                // JWT 생성
-                String jwtToken = jwtUtil.generateToken(Map.of(), user.getKakaoId().toString());
+                    // JWT 생성
+                    String jwtToken = jwtUtil.generateToken(Map.of(), user.getKakaoId().toString());
 
-                // 최종 응답에 JWT 포함
-                Map<String, Object> response = Map.of(
-                        "status", status,
-                        "message", message,
-                        "userInfo", user,
-                        "jwtToken", jwtToken
-                );
+                    // 최종 응답에 JWT 포함
+                    Map<String, Object> response = Map.of(
+                            "status", status,
+                            "message", message,
+                            "userInfo", user,
+                            "jwtToken", jwtToken
+                    );
 
-                return Mono.just(ResponseEntity.ok(response));
-            })
-            .onErrorResume(e -> {
-                // 에러 처리
-                return Mono.just(ResponseEntity.badRequest().body(Map.of(
-                        "status", "error",
-                        "message", "사용자 정보를 처리하는 중 문제가 발생했습니다.",
-                        "error", e.getMessage()
-                )));
-            });
+                    return Mono.just(ResponseEntity.ok(response));
+                })
+                .onErrorResume(e -> {
+                    // 에러 처리
+                    return Mono.just(ResponseEntity.badRequest().body(Map.of(
+                            "status", "error",
+                            "message", "사용자 정보를 처리하는 중 문제가 발생했습니다.",
+                            "error", e.getMessage()
+                    )));
+                });
     }
 }
