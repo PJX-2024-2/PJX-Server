@@ -1,6 +1,7 @@
 package com.pjx.pjxserver.controller;
 
 
+import com.pjx.pjxserver.dto.KakaoCallbackRequestDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import com.pjx.pjxserver.common.JwtUtil;
@@ -105,6 +106,7 @@ public class KakaoLoginController {
 //            .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
 //}
 
+
     @Operation(
             summary = "Access Token과 Refresh Token을 얻기 위한 API",
             description = "카카오 인증 코드로 액세스 토큰과 리프레시 토큰을 발급받습니다.",
@@ -155,6 +157,8 @@ public class KakaoLoginController {
                     return Mono.just(ResponseEntity.badRequest().build());
                 });
     }
+
+
 
     @Operation(
             summary = "Access Token으로 카카오 유저 정보 가져오고 사용자 저장",
