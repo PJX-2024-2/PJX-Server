@@ -48,6 +48,7 @@ public class SecurityConfig {
                             "http://localhost:443",
                             "http://localhost:80",
                             "https://www.savvymeals.store",
+                            "https://www.savvymeals.store:8443",
                             "http://localhost:3000"
                         ) 
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
