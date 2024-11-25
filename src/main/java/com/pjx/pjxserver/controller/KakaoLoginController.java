@@ -147,15 +147,17 @@ public class KakaoLoginController {
                     )
             )
     })
-    @GetMapping("/api/kakao/callback")
-    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
-            @RequestParam
-            @Parameter(description = "카카오로부터 받은 인증 코드")
-            String code) {
-        return kakaoService.getAccessToken(code)
-                .map(ResponseEntity::ok)
-                .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
-    }
+    @PostMapping("/api/kakao/callback")
+public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
+        @RequestBody
+        @Parameter(description = "카카오로부터 받은 인증 코드")
+        Map<String, String> requestBody) {
+    String code = requestBody.get("code");
+    return kakaoService.getAccessToken(code)
+            .map(ResponseEntity::ok)
+            .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
+}
+
 
 
 
