@@ -204,7 +204,11 @@ public class KakaoLoginController {
             HttpServletRequest request) {
 
         String code = requestDto.getCode();
-
+        
+        String origin = request.getHeader("Origin");
+        System.out.println("origin : " + origin);
+        
+        
         // 요청의 host 정보로 로컬 환경인지 판단
         String host = request.getServerName();
         boolean isLocal = host.contains("localhost") || host.startsWith("127.0.0.1");
