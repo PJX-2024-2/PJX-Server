@@ -2,6 +2,7 @@ package com.pjx.pjxserver.controller;
 
 
 import com.pjx.pjxserver.dto.KakaoCallbackRequestDto;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import com.pjx.pjxserver.common.JwtUtil;
