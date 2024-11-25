@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -46,7 +47,6 @@ public class KakaoService {
                 .post()
                 .uri("https://kauth.kakao.com/oauth/token")
                 .header(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .header(HttpHeaders.ORIGIN, origin != null ? origin : "https://pjx-client.vercel.app/auth/kakao")
                 .bodyValue("grant_type=authorization_code&client_id=" + clientId +
                         "&redirect_uri=" + redirectUri +
                         "&code=" + code +
@@ -76,11 +76,13 @@ public class KakaoService {
     }
 
     private String determineRedirectUri(String origin) {
-        if (origin != null && origin.contains("https://pjx-client.vercel.app")) {
-            log.debug("Using prod redirect URI for origin: {}", origin);
-            return prodRedirectUri;
+        String currentUri = ServletUriComponentsBuilder.fromCurrentRequest().toUriString();
+
+        if (currentUri.contains("localhost")) {
+            log.info("Using local redirect URI for origin: {}", currentUri);
+            return localRedirectUri;
         }
-        log.debug("Using local redirect URI");
-        return localRedirectUri;
+        log.info("Using prod redirect URI");
+        return prodRedirectUri;
     }
 }
