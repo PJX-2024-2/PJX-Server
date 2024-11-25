@@ -33,7 +33,36 @@ public class KakaoService {
 
     private final WebClient.Builder webClientBuilder;
 
-    
+    public Mono<KakaoTokenResponseDto> getAccessToken(String code, String origin) {
+        String redirectUri = determineRedirectUri(origin);
+        log.info("Using redirect_uri: {}", redirectUri);
+
+        log.info("Request parameters: client_id={}, redirect_uri={}, code={}, client_secret={}",
+                clientId, redirectUri, code, clientSecret);
+
+        return webClientBuilder.build()
+                .post()
+                .uri("https://kauth.kakao.com/oauth/token")
+                .header(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .header(HttpHeaders.ORIGIN, origin != null ? origin : "https://default-origin.com")
+                .bodyValue("grant_type=authorization_code&client_id=" + clientId +
+                        "&redirect_uri=" + redirectUri +
+                        "&code=" + code +
+                        "&client_secret=" + clientSecret)
+                .exchangeToMono(response -> {
+                    log.info("Response status: {}", response.statusCode());
+                    return response.bodyToMono(String.class)
+                            .doOnNext(body -> log.info("Response body: {}", body))
+                            .map(body -> {
+                                try {
+                                    return objectMapper.readValue(body, KakaoTokenResponseDto.class);
+                                } catch (JsonProcessingException e) {
+                                    throw new RuntimeException("Error parsing Kakao token response", e);
+                                }
+                            });
+                })
+                .doOnError(e -> log.error("Error getting access token from Kakao", e));
+    }
 
     public Mono<KakaoUserInfoResponseDto> getUserInfo(String accessToken) {
         return webClientBuilder.build()
