@@ -17,13 +17,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
-kakao:
-  client_id: ${KAKAO_ID}
-  client_secret: ${KAKAO_SECRET}
-  redirect_uri:
-    local: http://localhost:5173/auth/kakao
-    prod: https://pjx-client.vercel.app/auth/kakao
-
 cloud:
   aws:
     credentials:
@@ -35,3 +28,7 @@ cloud:
       auto: false
     s3:
       bucket: pjx-server-s3
+  
+# 활성화할 프로파일 설정 (local, dev)
+  profiles:
+    active: local # 배포 환경에서는 'dev'로 변경
