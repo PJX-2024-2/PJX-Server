@@ -150,9 +150,8 @@ public class KakaoLoginController {
     })
     @GetMapping("/api/kakao/callback")
     public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
-            @RequestParam @Parameter(description = "카카오로부터 받은 인증 코드") String code,
-            @RequestHeader(value = "Origin", required = false) @Parameter(hidden = true) String origin) {
-        return kakaoService.getAccessToken(code, origin)
+            @RequestParam @Parameter(description = "카카오로부터 받은 인증 코드") String code) {
+        return kakaoService.getAccessToken(code)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> {
                     log.error("Error processing kakao callback", e);
