@@ -39,7 +39,11 @@ public class SpendingService {
     public Spending createSpending(Long kakaoId, LocalDate date, BigDecimal amount, String description, String note, List<MultipartFile> images) throws IOException {
         User user = userRepository.findByKakaoId(kakaoId)
                 .orElseThrow(() -> new RuntimeException("User not found with kakaoId: " + kakaoId));
-        List<String> imageUrls = images.stream().map(this::uploadImageToS3).collect(Collectors.toList());
+
+        // 이미지가 null이거나 비어 있는 경우 빈 리스트를 사용
+        List<String> imageUrls = (images == null || images.isEmpty())
+                ? Collections.emptyList()
+                : images.stream().map(this::uploadImageToS3).collect(Collectors.toList());
 
         Spending spending = Spending.builder()
                 .kakaoId(kakaoId)
