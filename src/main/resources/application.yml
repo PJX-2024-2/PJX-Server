@@ -31,25 +31,6 @@ cloud:
       auto: false
     s3:
       bucket: pjx-server-s3
-  
-# local 프로파일에서만 적용될 설정
----
-spring:
-  config:
-    activate:
-      on-profile: local
-server:
-  port: 8443
-kakao:
-  redirect_uri: http://localhost:5173/auth/kakao
 
-# dev 프로파일에서만 적용될 설정
----
-spring:
-  config:
-    activate:
-      on-profile: dev
-kakao:
-  redirect_uri: https://pjx-client.vercel.app/auth/kakao
 
 
