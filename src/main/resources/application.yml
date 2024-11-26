@@ -49,8 +49,6 @@ spring:
   config:
     activate:
       on-profile: dev
-server:
-  port: 4443
 kakao:
   redirect_uri: https://pjx-client.vercel.app/auth/kakao
 
