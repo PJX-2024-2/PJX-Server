@@ -1,2 +1,0 @@
-kakao:
-  redirect_uri: http://localhost:5173/auth/kakao
