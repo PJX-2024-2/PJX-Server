@@ -19,24 +19,7 @@ spring:
 kakao:
   client_id: ${KAKAO_ID}
   client_secret: ${KAKAO_SECRET}
-# local 프로파일에서만 적용될 설정
----
-spring:
-  config:
-    activate:
-      on-profile: local
-kakao:
-  redirect_uri: http://localhost:5173/auth/kakao
-
-# dev 프로파일에서만 적용될 설정
----
-spring:
-  config:
-    activate:
-      on-profile: dev
-kakao:
-  redirect_uri: https://pjx-client.vercel.app/auth/kakao
-
+  
 cloud:
   aws:
     credentials:
@@ -49,4 +32,26 @@ cloud:
     s3:
       bucket: pjx-server-s3
   
+# local 프로파일에서만 적용될 설정
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+server:
+  port: 8443
+kakao:
+  redirect_uri: http://localhost:5173/auth/kakao
+
+# dev 프로파일에서만 적용될 설정
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+server:
+  port: 443
+kakao:
+  redirect_uri: https://pjx-client.vercel.app/auth/kakao
+
 
