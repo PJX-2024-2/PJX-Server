@@ -3,6 +3,7 @@ package com.pjx.pjxserver.service;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.pjx.pjxserver.domain.Spending;
+import com.pjx.pjxserver.domain.User;
 import com.pjx.pjxserver.repository.FriendRepository;
 import com.pjx.pjxserver.repository.SpendingRepository;
 import com.pjx.pjxserver.repository.UserRepository;
@@ -36,6 +37,8 @@ public class SpendingService {
     // 날짜를 포함하도록 메서드 시그니처 수정
 
     public Spending createSpending(Long kakaoId, LocalDate date, BigDecimal amount, String description, String note, List<MultipartFile> images) throws IOException {
+        User user = userRepository.findByKakaoId(kakaoId)
+                .orElseThrow(() -> new RuntimeException("User not found with kakaoId: " + kakaoId));
         List<String> imageUrls = images.stream().map(this::uploadImageToS3).collect(Collectors.toList());
 
         Spending spending = Spending.builder()
@@ -45,6 +48,7 @@ public class SpendingService {
                 .description(description)
                 .note(note)
                 .images(imageUrls)
+                .user(user)
                 .build();
 
         return spendingRepository.save(spending);
@@ -70,12 +74,9 @@ public class SpendingService {
             return "image/webp";
         } else if (fileName.endsWith(".png")) {
             return "image/png";
-        } else if (fileName.endsWith(".jpg")) {
-            return "image/jpg";
-        } else if (fileName.endsWith(".jpeg")) {
+        } else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
             return "image/jpeg";
-        }
-        else {
+        } else {
             return "application/octet-stream";
         }
     }
