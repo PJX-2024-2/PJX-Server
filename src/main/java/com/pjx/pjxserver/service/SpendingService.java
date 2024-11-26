@@ -70,9 +70,12 @@ public class SpendingService {
             return "image/webp";
         } else if (fileName.endsWith(".png")) {
             return "image/png";
-        } else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+        } else if (fileName.endsWith(".jpg")) {
+            return "image/jpg";
+        } else if (fileName.endsWith(".jpeg")) {
             return "image/jpeg";
-        } else {
+        }
+        else {
             return "application/octet-stream";
         }
     }
