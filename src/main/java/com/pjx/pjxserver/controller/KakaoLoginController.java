@@ -40,164 +40,46 @@ public class KakaoLoginController {
     @Value("${kakao.client_id}")
     private String clientId;
 
-    @Value("${kakao.redirect_uri}")
-    private String redirectUri;
-
-
-    @Operation(
-            summary = "백엔드를 위한 Kakao Login Page URL (배포)",
+        @Operation(
+            summary = "백엔드를 위한 Kakao Login Page URL (배포 URI)",
             description = "카카오 로그인 페이지 URL을 반환합니다.",
             security = @SecurityRequirement(name = "")
     )
-    @ApiResponse(
-            responseCode = "200",
-            description = "로그인 URL 반환 성공",
-            content = @Content(
-                    mediaType = "text/plain",
-                    schema = @Schema(type = "string"),
-                    examples = @ExampleObject(
-                            value = "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=your_client_id&redirect_uri=your_redirect_uri"
-                    )
-            )
-    )
-    @GetMapping("/api/kakao/login/prod")
-    public ResponseEntity<String> kakaoLoginPage_prod() {
+    @GetMapping("/api/kakao/login/dev")
+    public ResponseEntity<String> kakaoLoginPageDev() {
+
+        final String redirectUri ="https://pjx-client.vercel.app/auth/kakao";
+
         String loginUrl = "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=" +
                 clientId + "&redirect_uri=" + redirectUri;
         return ResponseEntity.ok(loginUrl);
     }
 
-    @GetMapping ("/test")
-    public ResponseEntity<Void> getBoard(HttpServletRequest request) {
-        String serverName = request.getServerName();
-        System.out. println (serverName) ;
-        return ResponseEntity.ok().build();
-    }
-
     @Operation(
-            summary = "백엔드를 위한 Kakao Login Page URL (로컬)",
+            summary = "백엔드를 위한 Kakao Login Page URL (로컬 URI)",
             description = "카카오 로그인 페이지 URL을 반환합니다.",
             security = @SecurityRequirement(name = "")
-    )
-    @ApiResponse(
-            responseCode = "200",
-            description = "로그인 URL 반환 성공",
-            content = @Content(
-                    mediaType = "text/plain",
-                    schema = @Schema(type = "string"),
-                    examples = @ExampleObject(
-                            value = "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=your_client_id&redirect_uri=your_redirect_uri"
-                    )
-            )
     )
     @GetMapping("/api/kakao/login/local")
-    public ResponseEntity<String> kakaoLoginPage_local() {
+    public ResponseEntity<String> kakaoLoginPageLocal() {
+        final String redirectUri = "http://localhost:5173/auth/kakao";
+
         String loginUrl = "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=" +
                 clientId + "&redirect_uri=" + redirectUri;
         return ResponseEntity.ok(loginUrl);
     }
 
 
-//    @Operation(
-//            summary = "Access Token과 Refresh Token을 얻기 위한 API",
-//            description = "카카오 인증 코드로 액세스 토큰과 리프레시 토큰을 발급받습니다.",
-//            security = @SecurityRequirement(name = "")
-//    )
-//    @ApiResponses(value = {
-//            @ApiResponse(
-//                    responseCode = "200",
-//                    description = "토큰 발급 성공",
-//                    content = @Content(
-//                            mediaType = "application/json",
-//                            schema = @Schema(implementation = KakaoTokenResponseDto.class),
-//                            examples = @ExampleObject(
-//                                    value = """
-//                    {
-//                        "access_token": "access_token_value",
-//                        "refresh_token": "refresh_token_value",
-//                        "expires_in": 21599,
-//                        "refresh_token_expires_in": 5183999
-//                    }
-//                    """
-//                            )
-//                    )
-//            )
-//    })
-//   @GetMapping("/api/kakao/callback")
-//public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
-//        @RequestParam
-//        @Parameter(description = "카카오로부터 받은 인증 코드") String code,
-//        ServerHttpRequest request) {
-//    // HTTP 요청의 Origin 헤더 가져오기
-//    String origin = request.getHeaders().getFirst("Origin");
-//    return kakaoService.getAccessToken(code, origin)
-//            .map(ResponseEntity::ok)
-//            .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
-//}
-
-
-//    @PostMapping("/api/kakao/callback")
-//    @Operation(
-//            summary = "Access Token과 Refresh Token을 얻기 위한 API",
-//            description = "카카오 인증 코드로 액세스 토큰과 리프레시 토큰을 발급받습니다.",
-//            security = @SecurityRequirement(name = "")
-//    )
-//    @ApiResponses(value = {
-//            @ApiResponse(
-//                    responseCode = "200",
-//                    description = "토큰 발급 성공",
-//                    content = @Content(
-//                            mediaType = "application/json",
-//                            schema = @Schema(implementation = KakaoTokenResponseDto.class),
-//                            examples = @ExampleObject(
-//                                    value = """
-//                    {
-//                        "access_token": "access_token_value",
-//                        "refresh_token": "refresh_token_value",
-//                        "expires_in": 21599,
-//                        "refresh_token_expires_in": 5183999
-//                    }
-//                    """
-//                            )
-//                    )
-//            ),
-//            @ApiResponse(
-//                    responseCode = "400",
-//                    description = "잘못된 요청",
-//                    content = @Content(
-//                            mediaType = "application/json",
-//                            examples = @ExampleObject(
-//                                    value = """
-//                    {
-//                        "error": "invalid_request",
-//                        "error_description": "Invalid request parameters"
-//                    }
-//                    """
-//                            )
-//                    )
-//            )
-//    })
-//    public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
-//            @RequestBody
-//            @Parameter(description = "카카오로부터 받은 인증 코드")
-//            KakaoCallbackRequestDto requestDto) {
-//
-//        String code = requestDto.getCode();
-//        return kakaoService.getAccessToken(code)
-//                .map(ResponseEntity::ok)
-//                .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
-//    }
-
-
-    @PostMapping("/api/kakao/callback")
+     @PostMapping("/api/kakao/callback")
     public Mono<ResponseEntity<KakaoTokenResponseDto>> kakaoCallback(
             @RequestBody
-            @Parameter(description = "카카오로부터 받은 인증 코드 및 기타 정보")
-            KakaoCallbackRequestDto requestDto) {
-
+            @Parameter(description = "카카오로부터 받은 인증 코드 및  Redirect URI")
+            KakaoCallbackRequestDto requestDto
+    ) {
         String code = requestDto.getCode(); // JSON에서 인증 코드 추출
+        String redirectUri = requestDto.getRedirectUri(); // JSON에서 URI  추출
 
-        return kakaoService.getAccessToken(code)
+        return kakaoService.getAccessToken(code, redirectUri)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
     }
