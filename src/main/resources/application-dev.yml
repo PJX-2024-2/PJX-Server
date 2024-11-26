@@ -1,4 +1,4 @@
 kakao:
   client_id: ${KAKAO_ID}
   client_secret: ${KAKAO_SECRET}
-  redirect_uri: https://pjx-client.vercel.app/auth/kakao
+  redirect_uri: ${KAKAO_REDIRECT_DEV}
