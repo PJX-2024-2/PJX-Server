@@ -85,6 +85,7 @@ public class SpendingController {
             @Parameter(description = "지출 관련 이미지") List<MultipartFile> images) {
 
         Long kakaoId = extractKakaoIdFromJwt(authHeader);
+
         LocalDate spendingDate = LocalDate.parse(date);
 
         try {
