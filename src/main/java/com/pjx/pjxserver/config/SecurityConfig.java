@@ -31,9 +31,10 @@ public class SecurityConfig {
                 )
                 // HTTP와 HTTPS 모두 지원
                 .requiresChannel(channel -> channel
-                        .requestMatchers("/api/kakao/**").requiresInsecure() // 특정 경로는 HTTP 허용
+                        .requestMatchers("/api/kakao/**", "/swagger-ui/**", "/v3/api-docs/**").requiresInsecure() // 특정 경로 HTTP 허용
                         .anyRequest().requiresSecure() // 나머지는 HTTPS
                 )
+
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
 
 
