@@ -29,11 +29,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/kakao/userinfo", "/auth/kakao", "/api/kakao/callback", "/api/kakao/login/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated() // 나머지는 인증 필요
                 )
-                // HTTP와 HTTPS 모두 지원
-                .requiresChannel(channel -> channel
-                        .requestMatchers("/api/kakao/**", "/swagger-ui/**", "/v3/api-docs/**").requiresInsecure() // 특정 경로 HTTP 허용
-                        .anyRequest().requiresSecure() // 나머지는 HTTPS
-                )
+                // // HTTP와 HTTPS 모두 지원
+                // .requiresChannel(channel -> channel
+                //         .requestMatchers("/api/kakao/**", "/swagger-ui/**", "/v3/api-docs/**").requiresInsecure() // 특정 경로 HTTP 허용
+                //         .anyRequest().requiresSecure() // 나머지는 HTTPS
+                // )
 
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
 
