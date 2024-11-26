@@ -1,8 +1,4 @@
 spring:
-# 활성화할 프로파일 설정 (local, dev)
-  profiles:
-    active: local # 배포 환경에서는 'dev'로 변경
-    
   security:
     user:
       name: user
