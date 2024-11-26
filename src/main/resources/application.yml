@@ -20,7 +20,10 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
-
+kakao:
+  client_id: ${KAKAO_ID}
+  client_secret: ${KAKAO_SECRET}
+  
 cloud:
   aws:
     credentials:
