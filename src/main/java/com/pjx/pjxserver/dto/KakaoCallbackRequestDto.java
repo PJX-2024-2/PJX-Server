@@ -10,5 +10,6 @@ import lombok.Setter;
 @Setter
 public class KakaoCallbackRequestDto {
     private String code;
+    private String redirectUri;
 }
 
