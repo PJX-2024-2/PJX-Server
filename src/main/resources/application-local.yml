@@ -1,4 +1,2 @@
 kakao:
-  client_id: ${KAKAO_ID}
-  client_secret: ${KAKAO_SECRET}
   redirect_uri: http://localhost:5173/auth/kakao
