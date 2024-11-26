@@ -147,6 +147,7 @@ public class KakaoService {
 //    }
 
     public Mono<KakaoTokenResponseDto> getAccessToken(String code) {
+        System.out.println(redirectUri);
         return webClientBuilder.build()
                 .post()
                 .uri("https://kauth.kakao.com/oauth/token")
