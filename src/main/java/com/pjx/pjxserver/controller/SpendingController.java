@@ -189,25 +189,48 @@ public class SpendingController {
     }
 
 
-    // 이번달 총 지출을 조회하는 GET 메서드
-    @Operation(summary = "이번달 총 지출 조회")
-    @GetMapping("/current")
-    public ResponseEntity<Map<String, Object>> getCurrentSpending(
-            @RequestHeader("Authorization") String authHeader,
-            @RequestParam
-            @Parameter(description = "조회할 월 (YYYY-MM 형식)", example = "2024-11")
-            String month) {
+//    // 이번달 총 지출을 조회하는 GET 메서드
+//    @Operation(summary = "이번달 총 지출 조회")
+//    @GetMapping("/current")
+//    public ResponseEntity<Map<String, Object>> getCurrentSpending(
+//            @RequestHeader("Authorization") String authHeader,
+//            @RequestParam
+//            @Parameter(description = "조회할 월 (YYYY-MM 형식)", example = "2024-11")
+//            String month) {
+//
+//        Long kakaoId = extractKakaoIdFromJwt(authHeader);
+//        LocalDate monthDate = LocalDate.parse(month + "-01");
+//        BigDecimal currentSpending = spendingGoalService.getCurrentSpending(kakaoId, monthDate);
+//
+//        Map<String, Object> response = new HashMap<>();
+//        response.put("currentSpending", currentSpending);
+//        response.put("month", month);
+//
+//        return ResponseEntity.ok(response);
+//    }
+@Operation(summary = "이번달 총 지출 조회")
+@PostMapping("/current")
+public ResponseEntity<Map<String, Object>> getCurrentSpendingPost(
+        @RequestHeader("Authorization") String authHeader,
+        @RequestParam
+        @Parameter(description = "조회할 월 (YYYY-MM 형식)", example = "2024-11")
+        String month) {
 
-        Long kakaoId = extractKakaoIdFromJwt(authHeader);
-        LocalDate monthDate = LocalDate.parse(month + "-01");
-        BigDecimal currentSpending = spendingGoalService.getCurrentSpending(kakaoId, monthDate);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("currentSpending", currentSpending);
-        response.put("month", month);
-
-        return ResponseEntity.ok(response);
+    if (month == null || month.isEmpty()) {
+        throw new IllegalArgumentException("Month must be provided as a query parameter.");
     }
+
+    Long kakaoId = extractKakaoIdFromJwt(authHeader);
+    LocalDate monthDate = LocalDate.parse(month + "-01"); // "YYYY-MM" 형식 처리
+    BigDecimal currentSpending = spendingGoalService.getCurrentSpending(kakaoId, monthDate);
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("currentSpending", currentSpending);
+    response.put("month", month);
+
+    return ResponseEntity.ok(response);
+}
+
 
 //    // 특정 날짜의 지출 항목을 추가하는 POST 메서드
 //    @Operation(summary = "특정 날짜의 지출 항목 추가")
